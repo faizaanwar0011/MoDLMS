@@ -1,0 +1,103 @@
+@model MoDLibrary.Models.Book
+@{
+    ViewData["Title"] = "Edit Book";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="Books" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <div>
+        <h5 class="fw-semibold mb-0">Edit Book</h5>
+        <small class="text-muted">@Model.BookNumber — @Model.Title</small>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+            <div class="card-body p-4">
+                <form asp-action="EditBook" method="post">
+                    <input asp-for="BookId" type="hidden" />
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-medium" style="font-size:13px;">Book Title <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium" style="font-size:13px;">Book Number <span class="text-danger">*</span></label>
+                            <input asp-for="BookNumber" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">Author <span class="text-danger">*</span></label>
+                            <input asp-for="Author" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">Publisher</label>
+                            <input asp-for="Publisher" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">Shelf Location <span class="text-danger">*</span></label>
+                            <input asp-for="ShelfLocation" class="form-control" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium" style="font-size:13px;">Total Copies</label>
+                            <input asp-for="TotalCopies" type="number" min="1" class="form-control" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium" style="font-size:13px;">Published Year</label>
+                            <input asp-for="PublishedYear" type="number" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">Category</label>
+                            <select asp-for="CategoryId" class="form-select">
+                                <option value="0">— Select Category —</option>
+                                @foreach (var cat in ViewBag.Categories as List<MoDLibrary.Models.Category> ?? new())
+                                {
+                                    <option value="@cat.CategoryId">@cat.CategoryName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">ISBN</label>
+                            <input asp-for="ISBN" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-2"></i>Save Changes
+                        </button>
+                        <a asp-action="Books" class="btn btn-outline-secondary px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+            <div class="card-body p-3">
+                <div class="text-muted mb-3" style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;">Current Status</div>
+                <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
+                    <span class="text-muted">Available</span>
+                    <span class="fw-medium text-success">@Model.AvailableCopies copies</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
+                    <span class="text-muted">Total</span>
+                    <span class="fw-medium">@Model.TotalCopies copies</span>
+                </div>
+                <div class="d-flex justify-content-between" style="font-size:13px;">
+                    <span class="text-muted">Status</span>
+                    <span>
+                        @if (Model.AvailableCopies > 0)
+                        {
+                            <span class="badge bg-success-subtle text-success">Available</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger-subtle text-danger">All Issued</span>
+                        }
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

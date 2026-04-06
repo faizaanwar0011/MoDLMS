@@ -1,0 +1,98 @@
+﻿@{
+    ViewData["Title"] = "Reserve Book";
+    Layout = "~/Views/Shared/_MemberLayout.cshtml";
+    var book = ViewBag.Book as MoDLibrary.Models.Book;
+}
+
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="Search" class="btn btn-sm btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h4 class="fw-bold mb-0">Reserve a Book</h4>
+        <small class="text-muted">Book is unavailable — reserve it for when it returns</small>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <!-- Book Info -->
+        <div class="card border-0 mb-4"
+             style="border-radius:12px;background:linear-gradient(135deg,#7f1d1d,#991b1b);color:#fff;">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:52px;height:52px;background:rgba(255,255,255,.15);">
+                        <i class="bi bi-book fs-4"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;opacity:.7;text-transform:uppercase;">Reserving</div>
+                        <div class="fw-bold" style="font-size:17px;">@book?.Title</div>
+                        <span class="badge mt-1" style="background:rgba(255,255,255,.2);font-size:11px;">
+                            <i class="bi bi-hourglass me-1"></i>Currently Unavailable
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+            <div class="card-header bg-white border-bottom px-4 py-3">
+                <h6 class="fw-semibold mb-0">
+                    <i class="bi bi-bookmark-plus me-2 text-danger"></i>Your Details
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="ReserveBook" method="post">
+                    <input type="hidden" name="BookId" value="@book?.BookId" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Full Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="MemberName" class="form-control"
+                               placeholder="Enter your full name" required />
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                CNIC <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="CNIC" class="form-control"
+                                   placeholder="e.g. 42201-1234567-1" maxlength="15" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Service Number <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="ServiceNo" class="form-control"
+                                   placeholder="e.g. ER-111" required />
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning d-flex gap-2 mb-4" style="font-size:13px;">
+                        <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+                        <div>
+                            When the book becomes available, the librarian will notify you.
+                            You will have <strong>2 days</strong> to collect it before
+                            the reservation expires.
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-danger btn-lg px-5">
+                            <i class="bi bi-bookmark-plus me-2"></i>Reserve Book
+                        </button>
+                        <a asp-action="Search" class="btn btn-outline-secondary btn-lg px-4">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}

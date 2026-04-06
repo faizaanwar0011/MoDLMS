@@ -1,0 +1,91 @@
+@model List<MoDLibrary.Models.BookRequest>
+@{
+    ViewData["Title"] = "All Book Requests";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h5 class="fw-semibold mb-0">All Book Requests</h5>
+        <small class="text-muted">Read-only view of all member requests</small>
+    </div>
+    <div class="d-flex gap-2">
+        <span class="badge bg-warning-subtle text-warning py-2 px-3">Pending: @Model.Count(r => r.Status == "Pending")</span>
+        <span class="badge bg-success-subtle text-success py-2 px-3">Approved: @Model.Count(r => r.Status == "Approved")</span>
+        <span class="badge bg-secondary-subtle text-secondary py-2 px-3">Collected: @Model.Count(r => r.Status == "Collected")</span>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm" style="border-radius:12px;">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead style="background:#f8f9fa;">
+                    <tr>
+                        <th class="px-4 py-3" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">#</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Member</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">CNIC / Service No</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Wing / Section</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Book Requested</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Shelf</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Date</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Status</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Remark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="9" class="text-center py-5 text-muted">No requests found.</td></tr>
+                    }
+                    @foreach (var r in Model)
+                    {
+                        <tr>
+                            <td class="px-4"><small class="text-muted">#@r.RequestId</small></td>
+                            <td><div class="fw-medium" style="font-size:13px;">@r.MemberName</div></td>
+                            <td style="font-size:12px;">
+                                <div>@r.CNIC</div>
+                                <div class="text-muted">@r.ServiceNo</div>
+                            </td>
+                            <td style="font-size:12px;">
+                                <span class="badge bg-light text-dark border">@r.WingName</span>
+                                <div class="text-muted mt-1">@r.SectionName</div>
+                            </td>
+                            <td style="font-size:13px;">
+                                <div class="fw-medium">@r.BookTitle</div>
+                                <div class="text-muted" style="font-size:11px;">@r.BookNumber</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info-subtle text-info" style="font-size:11px;">@r.ShelfLocation</span>
+                            </td>
+                            <td style="font-size:12px;">@r.RequestDate.ToString("dd MMM yyyy HH:mm")</td>
+                            <td>
+                                @switch (r.Status)
+                                {
+                                    case "Pending":
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                        break;
+                                    case "Approved":
+                                        <span class="badge bg-success">Approved</span>
+                                        break;
+                                    case "Rejected":
+                                        <span class="badge bg-danger">Rejected</span>
+                                        break;
+                                    case "Collected":
+                                        <span class="badge bg-secondary">Collected</span>
+                                        break;
+                                    default:
+                                        <span class="badge bg-light text-dark">@r.Status</span>
+                                        break;
+                                }
+                            </td>
+                            <td style="font-size:12px;max-width:180px;">
+                                <span class="text-muted">@(string.IsNullOrEmpty(r.Remark) ? "—" : r.Remark)</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

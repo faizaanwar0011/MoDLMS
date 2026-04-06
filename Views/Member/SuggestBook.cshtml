@@ -1,0 +1,108 @@
+﻿@model MoDLibrary.Models.BookSuggestion
+@{
+    ViewData["Title"] = "Suggest a Book";
+    Layout = "~/Views/Shared/_MemberLayout.cshtml";
+}
+
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="Search" class="btn btn-sm btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h4 class="fw-bold mb-0">Suggest a Book</h4>
+        <small class="text-muted">Recommend a book you'd like to see in the library</small>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+            <div class="card-header bg-white border-bottom px-4 py-3">
+                <h6 class="fw-semibold mb-0">
+                    <i class="bi bi-lightbulb me-2 text-warning"></i>Book Suggestion Form
+                </h6>
+                <small class="text-muted">
+                    Fill in the details below. If the book is not available,
+                    the library will try to procure it.
+                </small>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="SuggestBook" method="post">
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Your Full Name <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="MemberName" class="form-control"
+                                   placeholder="Enter your full name" required />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                CNIC <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="CNIC" class="form-control"
+                                   placeholder="e.g. 42201-1234567-1"
+                                   maxlength="15" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Service Number <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="ServiceNo" class="form-control"
+                                   placeholder="e.g. ER-111" required />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Book Title <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="BookTitle" class="form-control"
+                                   placeholder="Enter the book title" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Author Name
+                            </label>
+                            <input asp-for="AuthorName" class="form-control"
+                                   placeholder="Author (optional)" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Why should this book be added?
+                        </label>
+                        <textarea asp-for="Reason" class="form-control" rows="3"
+                                  placeholder="e.g. This book covers important topics related to defence management..."></textarea>
+                    </div>
+
+                    <div class="alert alert-info d-flex align-items-start gap-2 mb-4"
+                         style="font-size:13px;">
+                        <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+                        <div>
+                            After submission, the librarian will review your suggestion.
+                            If the book needs to be ordered, you will be notified of the
+                            expected arrival time. Check status using your CNIC on the
+                            <strong>My Suggestions</strong> page.
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-warning btn-lg px-5 fw-semibold">
+                            <i class="bi bi-lightbulb me-2"></i>Submit Suggestion
+                        </button>
+                        <a asp-action="Search" class="btn btn-outline-secondary btn-lg px-4">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

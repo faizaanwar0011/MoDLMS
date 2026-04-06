@@ -1,0 +1,164 @@
+﻿@model List<MoDLibrary.Models.Reservation>
+@{
+    ViewData["Title"] = "Book Reservations";
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+    // Admin k liye: Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var waiting = Model.Where(r => r.Status == "Waiting").ToList();
+    var notified = Model.Where(r => r.Status == "Notified").ToList();
+    var done = Model.Where(r => r.Status == "Collected" || r.Status == "Cancelled" || r.Status == "Expired").ToList();
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h5 class="fw-semibold mb-0">Book Reservations</h5>
+        <small class="text-muted">Members waiting for unavailable books</small>
+    </div>
+    <div class="d-flex gap-2">
+        <span class="badge bg-warning text-dark py-2 px-3">Waiting: @waiting.Count</span>
+        <span class="badge bg-info py-2 px-3">Notified: @notified.Count</span>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#waitingTab">
+            Waiting <span class="badge bg-warning text-dark ms-1">@waiting.Count</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#notifiedTab">Notified (@notified.Count)</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#doneTab">Completed (@done.Count)</a>
+    </li>
+</ul>
+
+<div class="tab-content">
+    @foreach (var (tabId, list) in new[] {
+        ("waitingTab",  waiting),
+        ("notifiedTab", notified),
+        ("doneTab",     done)
+        })
+    {
+        <div class="tab-pane fade @(tabId == "waitingTab" ? "show active" : "")" id="@tabId">
+            <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead style="background:#f8f9fa;">
+                                <tr>
+                                    <th class="px-4 py-3" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Member</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Book</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Availability</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Reserved On</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Status</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!list.Any())
+                                {
+                                    <tr><td colspan="6" class="text-center py-4 text-muted">No records.</td></tr>
+                                }
+                                @foreach (var res in list)
+                                {
+                                    <tr>
+                                        <td class="px-4">
+                                            <div class="fw-medium" style="font-size:13px;">@res.MemberName</div>
+                                            <div class="text-muted" style="font-size:11px;">@res.CNIC</div>
+                                            <div class="text-muted" style="font-size:11px;">@res.ServiceNo</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-medium" style="font-size:13px;">@res.BookTitle</div>
+                                            <div class="text-muted" style="font-size:11px;">@res.BookNumber</div>
+                                        </td>
+                                        <td>
+                                            @if (res.AvailableCopies > 0)
+                                            {
+                                                <span class="badge bg-success-subtle text-success">Available Now!</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger">Not Available</span>
+                                            }
+                                        </td>
+                                        <td style="font-size:12px;">@res.ReservedAt.ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            @switch (res.Status)
+                                            {
+                                                case "Waiting":
+                                                    <span class="badge bg-warning text-dark">Waiting</span>
+                                                    break;
+                                                case "Notified":
+                                                    <span class="badge bg-info">Notified</span>
+                                                    <div class="text-muted" style="font-size:11px;">
+                                                        Expires: @res.ExpiryDate?.ToString("dd MMM yyyy")
+                                                    </div>
+                                                    break;
+                                                case "Collected":
+                                                    <span class="badge bg-success">Collected</span>
+                                                    break;
+                                                case "Cancelled":
+                                                    <span class="badge bg-danger">Cancelled</span>
+                                                    break;
+                                                case "Expired":
+                                                    <span class="badge bg-secondary">Expired</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (res.Status == "Waiting" && res.AvailableCopies > 0)
+                                            {
+                                                <form asp-action="UpdateReservation" method="post">
+                                                    <input type="hidden" name="reservationId" value="@res.ReservationId" />
+                                                    <input type="hidden" name="status" value="Notified" />
+                                                    <button class="btn btn-sm btn-info text-white"
+                                                            onclick="return confirm('Notify member that book is available?')">
+                                                        <i class="bi bi-bell me-1"></i>Notify Member
+                                                    </button>
+                                                </form>
+                                            }
+                                            else if (res.Status == "Notified")
+                                            {
+                                                <div class="d-flex gap-1">
+                                                    <form asp-action="UpdateReservation" method="post">
+                                                        <input type="hidden" name="reservationId" value="@res.ReservationId" />
+                                                        <input type="hidden" name="status" value="Collected" />
+                                                        <button class="btn btn-sm btn-success">
+                                                            <i class="bi bi-check2"></i> Collected
+                                                        </button>
+                                                    </form>
+                                                    <form asp-action="UpdateReservation" method="post">
+                                                        <input type="hidden" name="reservationId" value="@res.ReservationId" />
+                                                        <input type="hidden" name="status" value="Expired" />
+                                                        <button class="btn btn-sm btn-outline-danger">
+                                                            <i class="bi bi-x"></i> Expire
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            }
+                                            else if (res.Status == "Waiting")
+                                            {
+                                                <form asp-action="UpdateReservation" method="post">
+                                                    <input type="hidden" name="reservationId" value="@res.ReservationId" />
+                                                    <input type="hidden" name="status" value="Cancelled" />
+                                                    <button class="btn btn-sm btn-outline-danger">
+                                                        <i class="bi bi-x me-1"></i>Cancel
+                                                    </button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}

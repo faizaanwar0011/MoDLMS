@@ -1,0 +1,114 @@
+@model List<MoDLibrary.Models.Book>
+@{
+    ViewData["Title"] = "Book Catalog";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h5 class="fw-semibold mb-0">Book Catalog</h5>
+        <small class="text-muted">@Model.Count total books in system</small>
+    </div>
+    <a asp-action="AddBook" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-2"></i>Add New Book
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm" style="border-radius:12px;">
+    <div class="card-header bg-white border-bottom px-4 py-3">
+        <input type="text" id="bookSearch" class="form-control" style="max-width:320px;"
+               placeholder="Filter by title, author or book number…" />
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="booksTable">
+                <thead style="background:#f8f9fa;">
+                    <tr>
+                        <th class="px-4 py-3" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Book No.</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Title</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Author</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Shelf Location</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Category</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Copies</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Status</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var b in Model)
+                    {
+                        <tr class="@(b.IsActive ? "" : "table-secondary opacity-75")">
+                            <td class="px-4">
+                                <span class="badge bg-light text-dark border" style="font-size:12px;font-family:monospace;">@b.BookNumber</span>
+                            </td>
+                            <td>
+                                <div class="fw-medium" style="font-size:14px;">@b.Title</div>
+                                @if (!string.IsNullOrEmpty(b.ISBN))
+                                {
+                                    <div class="text-muted" style="font-size:11px;">ISBN: @b.ISBN</div>
+                                }
+                            </td>
+                            <td style="font-size:13px;">@b.Author</td>
+                            <td>
+                                <span class="badge bg-info-subtle text-info">
+                                    <i class="bi bi-geo-alt me-1"></i>@b.ShelfLocation
+                                </span>
+                            </td>
+                            <td style="font-size:13px;">@(b.Category ?? "—")</td>
+                            <td>
+                                <div style="font-size:13px;">
+                                    <span class="text-success fw-medium">@b.AvailableCopies</span>
+                                    <span class="text-muted">/ @b.TotalCopies</span>
+                                </div>
+                                <div style="font-size:11px;color:#6c757d;">available</div>
+                            </td>
+                            <td>
+                                @if (!b.IsActive)
+                                {
+                                    <span class="badge bg-secondary">Removed</span>
+                                }
+                                else if (b.AvailableCopies > 0)
+                                {
+                                    <span class="badge bg-success-subtle text-success">Available</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger">All Issued</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a asp-action="EditBook" asp-route-id="@b.BookId"
+                                       class="btn btn-sm btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    @if (b.IsActive)
+                                    {
+                                        <form asp-action="DeleteBook" method="post" style="display:inline;"
+                                              onsubmit="return confirm('Remove this book from catalog?')">
+                                            <input type="hidden" name="id" value="@b.BookId" />
+                                            <button class="btn btn-sm btn-outline-danger" title="Remove">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.getElementById('bookSearch').addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#booksTable tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+</script>
+}

@@ -1,0 +1,43 @@
+@model MoDLibrary.Models.AddLibrarianViewModel
+@{
+    ViewData["Title"] = "Add Librarian";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="Librarians" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <div>
+        <h5 class="fw-semibold mb-0">Add New Librarian</h5>
+        <small class="text-muted">Create a librarian account</small>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+            <div class="card-body p-4">
+                <form asp-action="AddLibrarian" method="post">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">Full Name <span class="text-danger">*</span></label>
+                        <input asp-for="FullName" class="form-control" placeholder="e.g. Muhammad Ali" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">Username <span class="text-danger">*</span></label>
+                        <input asp-for="Username" class="form-control" placeholder="e.g. librarian2" required />
+                        <div class="form-text">Must be unique. Used for login.</div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-medium" style="font-size:13px;">Password <span class="text-danger">*</span></label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Set a strong password" required />
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-person-plus me-2"></i>Create Account
+                        </button>
+                        <a asp-action="Librarians" class="btn btn-outline-secondary px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

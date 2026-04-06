@@ -1,0 +1,147 @@
+﻿@model List<MoDLibrary.Models.BookRequest>
+@{
+    ViewData["Title"] = "My Request Status";
+    Layout = "~/Views/Shared/_MemberLayout.cshtml";
+}
+
+<div class="mb-4">
+    <h4 class="fw-bold mb-1">My Request Status</h4>
+    <p class="text-muted mb-0" style="font-size:14px;">
+        Enter your CNIC to check your book request status
+    </p>
+</div>
+
+<!-- CNIC Search -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+    <div class="card-body p-4">
+        <form asp-action="MyRequests" method="get">
+            <div class="d-flex gap-3">
+                <div class="flex-grow-1">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-credit-card-2-front text-muted"></i>
+                        </span>
+                        <input type="text" name="cnic" value="@ViewBag.CNIC"
+                               class="form-control border-start-0 ps-1"
+                               placeholder="Enter your CNIC — e.g. 42201-1234567-1"
+                               maxlength="15" autofocus
+                               style="font-size:14px;" />
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg px-4">
+                    <i class="bi bi-search me-2"></i>Check Status
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (ViewBag.CNIC != "")
+{
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size:56px;opacity:.3;"></i>
+            <p class="text-muted mt-3">No request found for this CNIC.</p>
+        </div>
+    }
+    else
+    {
+        <div class="mb-3">
+            <span class="text-muted" style="font-size:14px;">
+                <strong>@Model.Count</strong> request(s) mili — <strong>@Model.First().MemberName</strong>
+            </span>
+        </div>
+
+        <div class="d-flex flex-column gap-3">
+            @foreach (var r in Model)
+            {
+                <div class="card border-0 shadow-sm" style="border-radius:12px;
+                                 border-left: 4px solid @(r.Status == "Approved" ? "#16a34a" :
+                                                                                                   r.Status == "Rejected" ? "#dc2626" :
+                                                                                                   r.Status == "Collected" ? "#0d6efd" : "#f59e0b") !important;">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+                            <div>
+                                <div class="fw-bold" style="font-size:16px;">@r.BookTitle</div>
+                                <div class="text-muted" style="font-size:13px;">
+                                    <i class="bi bi-upc me-1"></i>@r.BookNumber
+                                    &nbsp;|&nbsp;
+                                    <i class="bi bi-geo-alt me-1"></i>@r.ShelfLocation
+                                </div>
+                            </div>
+                            <div>
+                                @switch (r.Status)
+                                {
+                                    case "Pending":
+                                        <span class="badge bg-warning text-dark px-3 py-2" style="font-size:13px;">
+                                            <i class="bi bi-hourglass me-1"></i>Pending
+                                        </span>
+                                        break;
+                                    case "Approved":
+                                        <span class="badge bg-success px-3 py-2" style="font-size:13px;">
+                                            <i class="bi bi-check-circle me-1"></i>Approved
+                                        </span>
+                                        break;
+                                    case "Rejected":
+                                        <span class="badge bg-danger px-3 py-2" style="font-size:13px;">
+                                            <i class="bi bi-x-circle me-1"></i>Rejected
+                                        </span>
+                                        break;
+                                    case "Collected":
+                                        <span class="badge bg-primary px-3 py-2" style="font-size:13px;">
+                                            <i class="bi bi-bookmark-check me-1"></i>Collected
+                                        </span>
+                                        break;
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Remark Box -->
+                        @if (!string.IsNullOrEmpty(r.Remark))
+                        {
+                            <div class="p-3 mb-3 rounded" style="background:#f0f9ff;border:1px solid #bae6fd;">
+                                <div style="font-size:11px;color:#0369a1;text-transform:uppercase;
+                                                            letter-spacing:.5px;margin-bottom:4px;">
+                                    <i class="bi bi-chat-text me-1"></i>Librarian's Message
+                                </div>
+                                <div class="fw-medium" style="font-size:14px;color:#0c4a6e;">
+                                    "@r.Remark"
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Details -->
+                        <div class="row g-2" style="font-size:13px;">
+                            <div class="col-md-4">
+                                <span class="text-muted">Request Date:</span>
+                                <span class="fw-medium ms-1">@r.RequestDate.ToString("dd MMM yyyy")</span>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted">Wing:</span>
+                                <span class="fw-medium ms-1">@r.WingName</span>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted">Section:</span>
+                                <span class="fw-medium ms-1">@r.SectionName</span>
+                            </div>
+                        </div>
+
+                        <!-- Approved message -->
+                        @if (r.Status == "Approved")
+                        {
+                            <div class="alert alert-success d-flex align-items-center gap-2 mt-3 mb-0"
+                                 style="font-size:13px;">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <div>
+                                    <strong>Your book is ready for collection!</strong>
+                                    Please visit the library to collect your book.
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}

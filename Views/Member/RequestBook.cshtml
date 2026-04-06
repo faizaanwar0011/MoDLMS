@@ -1,0 +1,170 @@
+@model MoDLibrary.Models.BookRequestViewModel
+@{
+    ViewData["Title"] = "Request a Book";
+    Layout = "~/Views/Shared/_MemberLayout.cshtml";
+}
+
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="Search" class="btn btn-sm btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h4 class="fw-bold mb-0">Request a Book</h4>
+        <small class="text-muted">Fill in your details to submit a book issue request</small>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+
+        <!-- Book Info Card -->
+        <div class="card border-0 mb-4" style="border-radius:12px;background:linear-gradient(135deg,#1e3a5f,#0d2137);color:#fff;">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:56px;height:56px;background:rgba(255,255,255,.15);">
+                        <i class="bi bi-book fs-4"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.5px;">Requesting Book</div>
+                        <div class="fw-bold" style="font-size:18px;">@Model.BookTitle</div>
+                        <span class="badge mt-1" style="background:rgba(255,255,255,.2);font-size:11px;">
+                            <i class="bi bi-check-circle me-1"></i>Available — Ready to Request
+                        </span>
+                    </div>
+                </div>
+                <input asp-for="BookId" type="hidden" />
+                <input asp-for="BookTitle" type="hidden" />
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+            <div class="card-header bg-white border-bottom px-4 py-3">
+                <h6 class="fw-semibold mb-0"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Your Information</h6>
+                <small class="text-muted">Please fill in your personal and service details accurately</small>
+            </div>
+            <div class="card-body p-4">
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        <div>
+                            <strong>Request Nahi Ho Sakti!</strong><br />
+                            @ViewBag.Error
+                        </div>
+                    </div>
+                }
+
+                <form asp-action="RequestBook" method="post">
+                    <input asp-for="BookId" type="hidden" />
+                    <input asp-for="BookTitle" type="hidden" />
+
+                    <!-- Personal details -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Full Name <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="MemberName" class="form-control form-control-lg"
+                                   placeholder="Enter your full name" required />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                CNIC <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="CNIC" class="form-control"
+                                   placeholder="e.g. 42201-1234567-1"
+                                   maxlength="15" required />
+                            <div class="form-text">Format: XXXXX-XXXXXXX-X</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Service Number <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="ServiceNo" class="form-control"
+                                   placeholder="e.g. 123456" required />
+                        </div>
+                    </div>
+
+                    <!-- Wing & Section (from DB) -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Wing <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="WingId" class="form-select" id="wingSelect" required
+                                    onchange="loadSections(this.value)">
+                                <option value="">— Select Wing —</option>
+                                @foreach (var w in Model.Wings)
+                                {
+                                    <option value="@w.WingId">@w.WingName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Section <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="SectionId" class="form-select" id="sectionSelect" required disabled>
+                                <option value="">— Select Wing first —</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Info box -->
+                    <div class="alert alert-info d-flex align-items-start gap-2 mb-4" style="font-size:13px;">
+                        <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+                        <div>
+                            After submitting, the librarian will review your request and send you a notification.
+                            <strong>Loan period: 15 days.</strong> A fine of Rs. 50/day applies after the deadline.
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary btn-lg px-5">
+                            <i class="bi bi-send me-2"></i>Generate Request
+                        </button>
+                        <a asp-action="Search" class="btn btn-outline-secondary btn-lg px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function loadSections(wingId) {
+        const sectionSel = document.getElementById('sectionSelect');
+        if (!wingId) {
+            sectionSel.innerHTML = '<option value="">— Select Wing first —</option>';
+            sectionSel.disabled = true;
+            return;
+        }
+        sectionSel.disabled = true;
+        sectionSel.innerHTML = '<option value="">Loading…</option>';
+
+        fetch('/Member/GetSections?wingId=' + wingId)
+            .then(r => r.json())
+            .then(sections => {
+                sectionSel.innerHTML = '<option value="">— Select Section —</option>';
+                sections.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.sectionId;
+                    opt.textContent = s.sectionName;
+                    sectionSel.appendChild(opt);
+                });
+                sectionSel.disabled = false;
+            })
+            .catch(() => {
+                sectionSel.innerHTML = '<option value="">Error loading sections</option>';
+                sectionSel.disabled = false;
+            });
+    }
+</script>
+}

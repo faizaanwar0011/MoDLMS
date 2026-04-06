@@ -1,0 +1,113 @@
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration config
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — MoDLibrary</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <link href="~/css/site.css" rel="stylesheet" />
+</head>
+<body style="background:#f0f4f8;">
+
+    <!-- Remark notification popup area -->
+    <div id="remark-container" style="position:fixed;top:20px;right:20px;z-index:9999;width:360px;"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg" style="background:#0d1b2a;border-bottom:3px solid #f59e0b;">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/Member/Search">
+                <i class="bi bi-book-half text-warning fs-5"></i>
+                <span class="text-white fw-bold" style="font-size:16px;">MoDLibrary</span>
+                <span class="text-secondary" style="font-size:11px;">| Ministry of Defence</span>
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <a asp-controller="Member" asp-action="MyRequests"
+                   class="btn btn-sm btn-outline-light me-2">
+                    <i class="bi bi-clock-history me-1"></i>My Requests
+                </a>
+                <a asp-controller="Member" asp-action="SuggestBook"
+                   class="btn btn-sm btn-outline-warning me-2">
+                    <i class="bi bi-lightbulb me-1"></i>Suggest a Book
+                </a>
+                <a asp-controller="Member" asp-action="MySuggestions"
+                   class="btn btn-sm btn-outline-light me-2">
+                    <i class="bi bi-list-check me-1"></i>My Suggestions
+                </a>
+                <a asp-controller="Member" asp-action="MyReservations"
+                   class="btn btn-sm btn-outline-light me-2">
+                    <i class="bi bi-bookmark-check me-1"></i>My Reservations
+                </a>
+                <a href="/Account/Logout" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-box-arrow-left"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="bi bi-exclamation-circle me-2"></i>@TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- ✅ FIXED ANNOUNCEMENTS -->
+        @{
+            var announcements = new MoDLibrary.DAL.DatabaseHelper(config)
+            .GetActiveAnnouncements();
+        }
+
+        @foreach (var ann in announcements)
+        {
+            <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+                <strong><i class="bi bi-megaphone me-2"></i>@ann.Title</strong>
+                — @ann.Message
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @RenderBody()
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script src="~/js/site.js"></script>
+
+    <script>
+        // Member listens for librarian remark
+        const memConn = new signalR.HubConnectionBuilder().withUrl("/notificationHub").build();
+        memConn.start().then(() => memConn.invoke("JoinMembersGroup").catch(() => {})).catch(console.error);
+
+        memConn.on("ReceiveRemark", data => {
+            const c = document.getElementById("remark-container");
+            const cls = data.status === "Approved" ? "alert-success" : data.status === "Rejected" ? "alert-danger" : "alert-info";
+            const icon = data.status === "Approved" ? "check-circle" : data.status === "Rejected" ? "x-circle" : "info-circle";
+            const d = document.createElement("div");
+            d.className = `alert ${cls} alert-dismissible fade show shadow`;
+            d.style.cssText = "font-size:13px;";
+            d.innerHTML = `
+                <strong><i class="bi bi-${icon}-fill me-1"></i>Librarian Update — Request #${data.requestId}</strong><br/>
+                <strong>Status:</strong> ${data.status}<br/>
+                <strong>Message:</strong> ${data.remark}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            c.appendChild(d);
+            setTimeout(() => { if(d.parentNode) d.remove(); }, 15000);
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

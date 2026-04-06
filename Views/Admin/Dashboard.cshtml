@@ -1,0 +1,201 @@
+@model MoDLibrary.Models.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #0d6efd!important;border-radius:12px;">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;">Total Books</div>
+                        <div class="fw-bold mt-1" style="font-size:28px;">@Model.Stats.TotalBooks</div>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:48px;height:48px;background:#e7f1ff;">
+                        <i class="bi bi-journals text-primary fs-5"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #198754!important;border-radius:12px;">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;">Books Issued</div>
+                        <div class="fw-bold mt-1" style="font-size:28px;">@Model.Stats.BooksIssued</div>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:48px;height:48px;background:#d1e7dd;">
+                        <i class="bi bi-bookmark-check text-success fs-5"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #ffc107!important;border-radius:12px;">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;">Pending Requests</div>
+                        <div class="fw-bold mt-1" style="font-size:28px;">@Model.Stats.PendingRequests</div>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:48px;height:48px;background:#fff3cd;">
+                        <i class="bi bi-inbox text-warning fs-5"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left:4px solid #dc3545!important;border-radius:12px;">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;">Overdue Books</div>
+                        <div class="fw-bold mt-1 text-danger" style="font-size:28px;">@Model.Stats.OverdueBooks</div>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:48px;height:48px;background:#f8d7da;">
+                        <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Second Row Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+            <div class="card-body">
+                <div class="text-muted mb-1" style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;">Unpaid Fines</div>
+                <div class="fw-bold" style="font-size:22px;">@Model.Stats.UnpaidFines <small class="text-muted fs-6">records</small></div>
+                <div class="text-danger fw-semibold mt-1">Rs. @Model.Stats.TotalFineAmount.ToString("N0") pending</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+            <div class="card-body">
+                <div class="text-muted mb-1" style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;">Active Librarians</div>
+                <div class="fw-bold" style="font-size:22px;">@Model.Stats.TotalLibrarians</div>
+                <a asp-controller="Admin" asp-action="Librarians" class="text-decoration-none" style="font-size:13px;">Manage librarians →</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+            <div class="card-body">
+                <div class="text-muted mb-1" style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;">Fine Rate</div>
+                <div class="fw-bold" style="font-size:22px;">Rs. 50 <small class="text-muted fs-6">/ day</small></div>
+                <div class="text-muted" style="font-size:12px;">After 15-day limit — @DateTime.Now.ToString("dd MMM yyyy")</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Requests + Overdue Books -->
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+            <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
+                <span class="fw-semibold" style="font-size:14px;">
+                    <i class="bi bi-clock-history me-2 text-primary"></i>Recent Requests
+                </span>
+                <a asp-controller="Admin" asp-action="Requests" class="text-decoration-none" style="font-size:12px;">View all →</a>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.RecentRequests.Any())
+                {
+                    <div class="text-center py-4 text-muted" style="font-size:13px;">No requests yet.</div>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var r in Model.RecentRequests)
+                        {
+                            <li class="list-group-item px-4 py-3">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="fw-medium" style="font-size:13px;">@r.MemberName</div>
+                                        <div class="text-muted" style="font-size:12px;">@r.BookTitle</div>
+                                        <div class="text-muted" style="font-size:11px;">@r.RequestDate.ToString("dd MMM yyyy — hh:mm tt")</div>
+                                    </div>
+                                    <div>
+                                        @switch (r.Status)
+                                        {
+                                            case "Pending":
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                break;
+                                            case "Approved":
+                                                <span class="badge bg-success">Approved</span>
+                                                break;
+                                            case "Collected":
+                                                <span class="badge bg-primary">Collected</span>
+                                                break;
+                                            case "Rejected":
+                                                <span class="badge bg-danger">Rejected</span>
+                                                break;
+                                        }
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+            <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
+                <span class="fw-semibold" style="font-size:14px;">
+                    <i class="bi bi-exclamation-triangle me-2 text-danger"></i>Overdue Books
+                </span>
+                <a asp-controller="Admin" asp-action="IssuedBooks" class="text-decoration-none" style="font-size:12px;">View all →</a>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.OverdueBooks.Any())
+                {
+                    <div class="text-center py-4 text-muted" style="font-size:13px;">
+                        <i class="bi bi-check-circle text-success fs-4 d-block mb-2"></i>
+                        No overdue books!
+                    </div>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var ob in Model.OverdueBooks)
+                        {
+                            <li class="list-group-item px-4 py-3" style="background:#fff9f9;">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="fw-medium" style="font-size:13px;">@ob.MemberName</div>
+                                        <div class="text-muted" style="font-size:12px;">@ob.BookTitle</div>
+                                        <div class="text-danger" style="font-size:11px;">
+                                            Due: @ob.DueDate.ToString("dd MMM yyyy") — @ob.DaysLate day(s) late
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="text-danger fw-bold" style="font-size:14px;">Rs. @ob.FineAmount.ToString("N0")</div>
+                                        <div class="text-muted" style="font-size:11px;">fine</div>
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>

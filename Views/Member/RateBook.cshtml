@@ -1,0 +1,84 @@
+﻿@model MoDLibrary.Models.BookRating
+@{
+    ViewData["Title"] = "Rate a Book";
+    Layout = "~/Views/Shared/_MemberLayout.cshtml";
+    var book = ViewBag.Book as MoDLibrary.Models.Book;
+}
+
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="Search" class="btn btn-sm btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h4 class="fw-bold mb-0">Rate a Book</h4>
+        <small class="text-muted">Share your experience</small>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <i class="bi bi-book text-primary" style="font-size:36px;"></i>
+                    <h5 class="fw-bold mt-2 mb-0">@book?.Title</h5>
+                    <div class="text-muted" style="font-size:13px;">by @book?.Author</div>
+                </div>
+
+                <form asp-action="RateBook" method="post">
+                    <input asp-for="BookId" type="hidden" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Your Name <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="MemberName" class="form-control"
+                               placeholder="Enter your name" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            CNIC <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="CNIC" class="form-control"
+                               placeholder="e.g. 42201-1234567-1" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Rating <span class="text-danger">*</span>
+                        </label>
+                        <div class="d-flex gap-2">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio"
+                                           name="Rating" value="@i" id="star@i"
+                                           @(i == 5 ? "checked" : "") required />
+                                    <label class="form-check-label" for="star@i">
+                                        @i ⭐
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Review (Optional)
+                        </label>
+                        <textarea asp-for="Review" class="form-control" rows="3"
+                                  placeholder="Share your thoughts about this book..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-warning w-100 fw-semibold py-2">
+                        <i class="bi bi-star me-2"></i>Submit Rating
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}

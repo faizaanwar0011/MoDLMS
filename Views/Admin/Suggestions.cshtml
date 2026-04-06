@@ -1,0 +1,239 @@
+﻿@model List<MoDLibrary.Models.BookSuggestion>
+@{
+    ViewData["Title"] = "Book Suggestions";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var pending = Model.Where(s => s.Status == "Pending").ToList();
+    var inProgress = Model.Where(s => s.Status == "UnderReview" || s.Status == "Ordered").ToList();
+    var done = Model.Where(s => s.Status == "Available" || s.Status == "Rejected").ToList();
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h5 class="fw-semibold mb-0">Book Suggestions</h5>
+        <small class="text-muted">Members ki book recommendations</small>
+    </div>
+    <div class="d-flex gap-2">
+        <span class="badge bg-warning text-dark py-2 px-3">
+            Pending: @pending.Count
+        </span>
+        <span class="badge bg-info py-2 px-3">
+            In Progress: @inProgress.Count
+        </span>
+        <span class="badge bg-success py-2 px-3">
+            Done: @done.Count
+        </span>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#pendingSug">
+            Pending <span class="badge bg-warning text-dark ms-1">@pending.Count</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#inProgressSug">
+            In Progress (@inProgress.Count)
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#doneSug">
+            Completed (@done.Count)
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#allSug">
+            All (@Model.Count)
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content">
+    @foreach (var (tabId, list) in new[] {
+        ("pendingSug",   pending),
+        ("inProgressSug",inProgress),
+        ("doneSug",      done),
+        ("allSug",       Model.ToList())
+        })
+    {
+        <div class="tab-pane fade @(tabId == "pendingSug" ? "show active" : "")" id="@tabId">
+            <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead style="background:#f8f9fa;">
+                                <tr>
+                                    <th class="px-4 py-3" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Member</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Book Suggested</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Reason</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Date</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Status</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!list.Any())
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">
+                                            No suggestions in this category.
+                                        </td>
+                                    </tr>
+                                }
+                                @foreach (var s in list)
+                                {
+                                    <tr>
+                                        <td class="px-4">
+                                            <div class="fw-medium" style="font-size:13px;">@s.MemberName</div>
+                                            <div class="text-muted" style="font-size:11px;">@s.CNIC</div>
+                                            <div class="text-muted" style="font-size:11px;">@s.ServiceNo</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-medium" style="font-size:13px;">@s.BookTitle</div>
+                                            @if (!string.IsNullOrEmpty(s.AuthorName))
+                                            {
+                                                <div class="text-muted" style="font-size:11px;">by @s.AuthorName</div>
+                                            }
+                                        </td>
+                                        <td style="font-size:12px;max-width:160px;color:#6c757d;">
+                                            @(string.IsNullOrEmpty(s.Reason) ? "—" :
+                                                                                s.Reason.Length > 60 ? s.Reason.Substring(0, 60) + "…" : s.Reason)
+                                        </td>
+                                        <td style="font-size:12px;color:#6c757d;">
+                                            @s.SuggestedAt.ToString("dd MMM yyyy")
+                                        </td>
+                                        <td>
+                                            @switch (s.Status)
+                                            {
+                                                case "Pending":
+                                                    <span class="badge bg-secondary-subtle text-secondary">Pending</span>
+                                                    break;
+                                                case "UnderReview":
+                                                    <span class="badge bg-warning text-dark">Under Review</span>
+                                                    break;
+                                                case "Ordered":
+                                                    <span class="badge bg-info">Ordered</span>
+                                                    break;
+                                                case "Available":
+                                                    <span class="badge bg-success">Available</span>
+                                                    break;
+                                                case "Rejected":
+                                                    <span class="badge bg-danger">Rejected</span>
+                                                    break;
+                                            }
+                                            @if (!string.IsNullOrEmpty(s.AdminRemark))
+                                            {
+                                                <div class="text-muted mt-1" style="font-size:10px;">
+                                                    "@(s.AdminRemark.Length > 30 ? s.AdminRemark.Substring(0, 30) + "…" : s.AdminRemark)"
+                                                </div>
+                                            }
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#updateModal"
+                                                    onclick="setModal(@s.SuggestionId, '@s.Status', '@s.BookTitle')">
+                                                <i class="bi bi-pencil me-1"></i>Update
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-pencil me-2 text-primary"></i>Update Suggestion Status
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="UpdateSuggestion" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="SuggestionId" id="modalSugId" />
+
+                    <div class="mb-2">
+                        <small class="text-muted">Book:</small>
+                        <div class="fw-semibold" id="modalBookTitle" style="font-size:14px;"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">Status</label>
+                        <select name="Status" id="modalStatus" class="form-select">
+                            <option value="Pending">Pending — Not reviewed yet</option>
+                            <option value="UnderReview">Under Review — Being considered</option>
+                            <option value="Ordered">Ordered — Book has been ordered</option>
+                            <option value="Available">Available — Book is now in library</option>
+                            <option value="Rejected">Rejected — Cannot be procured</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Response / Remark
+                        </label>
+                        <textarea name="AdminRemark" id="modalRemark" class="form-control" rows="3"
+                                  placeholder="e.g. Book has been ordered and will arrive in 7-10 days."
+                                  required></textarea>
+                    </div>
+
+                    <!-- Quick templates -->
+                    <div>
+                        <div class="text-muted mb-2" style="font-size:12px;">Quick Templates:</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-info"
+                                    onclick="useTemplate('Ordered','Book has been ordered and will arrive within 7-10 working days. You will be notified upon arrival.')">
+                                📦 Ordered
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success"
+                                    onclick="useTemplate('Available','Your suggested book is now available in the library. Please visit to request it.')">
+                                ✅ Now Available
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning"
+                                    onclick="useTemplate('UnderReview','Your suggestion is under review. We will update you shortly.')">
+                                🔍 Under Review
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    onclick="useTemplate('Rejected','Unfortunately we are unable to procure this book at this time.')">
+                                ❌ Rejected
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-save me-2"></i>Update Status
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function setModal(id, status, title) {
+            document.getElementById('modalSugId').value    = id;
+            document.getElementById('modalStatus').value  = status;
+            document.getElementById('modalBookTitle').textContent = title;
+            document.getElementById('modalRemark').value  = '';
+        }
+        function useTemplate(status, remark) {
+            document.getElementById('modalStatus').value = status;
+            document.getElementById('modalRemark').value = remark;
+        }
+    </script>
+}

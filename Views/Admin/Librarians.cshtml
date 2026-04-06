@@ -1,0 +1,83 @@
+@model List<MoDLibrary.Models.LibrarianUser>
+@{
+    ViewData["Title"] = "Manage Librarians";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h5 class="fw-semibold mb-0">Manage Librarians</h5>
+        <small class="text-muted">@Model.Count(l => l.IsActive) active librarians</small>
+    </div>
+    <a asp-action="AddLibrarian" class="btn btn-primary">
+        <i class="bi bi-person-plus me-2"></i>Add Librarian
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm" style="border-radius:12px;">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead style="background:#f8f9fa;">
+                    <tr>
+                        <th class="px-4 py-3" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Name</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Username</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Status</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Created</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="5" class="text-center py-5 text-muted">No librarians found. Add one to get started.</td></tr>
+                    }
+                    @foreach (var lib in Model)
+                    {
+                        <tr class="@(!lib.IsActive ? "opacity-50" : "")">
+                            <td class="px-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                         style="width:36px;height:36px;background:#e7f1ff;font-size:13px;font-weight:600;color:#0d6efd;">
+                                        @lib.FullName.Substring(0, 1).ToUpper()
+                                    </div>
+                                    <div class="fw-medium" style="font-size:14px;">@lib.FullName</div>
+                                </div>
+                            </td>
+                            <td style="font-size:13px;font-family:monospace;">@lib.Username</td>
+                            <td>
+                                @if (lib.IsActive)
+                                {
+                                    <span class="badge bg-success-subtle text-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary">Deactivated</span>
+                                }
+                            </td>
+                            <td style="font-size:12px;color:#6c757d;">@lib.CreatedAt.ToString("dd MMM yyyy")</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a asp-action="EditLibrarian" asp-route-id="@lib.UserId"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
+                                    @if (lib.IsActive)
+                                    {
+                                        <form asp-action="DeleteLibrarian" method="post" style="display:inline;"
+                                              onsubmit="return confirm('Deactivate this librarian account?')">
+                                            <input type="hidden" name="id" value="@lib.UserId" />
+                                            <button class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-person-dash"></i> Deactivate
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

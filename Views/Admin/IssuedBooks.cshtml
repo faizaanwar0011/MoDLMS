@@ -1,0 +1,121 @@
+@model List<MoDLibrary.Models.IssuedBook>
+@{
+    ViewData["Title"] = "Issued Books";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var active   = Model.Where(x => !x.IsReturned && x.BookStatus == "Active").ToList();
+    var overdue  = Model.Where(x => !x.IsReturned && x.BookStatus == "Overdue").ToList();
+    var returned = Model.Where(x => x.IsReturned).ToList();
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h5 class="fw-semibold mb-0">Issued Books</h5>
+        <small class="text-muted">Complete issuance records</small>
+    </div>
+    <div class="d-flex gap-2">
+        <span class="badge bg-success-subtle text-success py-2 px-3">Active: @active.Count</span>
+        <span class="badge bg-danger-subtle text-danger py-2 px-3">Overdue: @overdue.Count</span>
+        <span class="badge bg-secondary-subtle text-secondary py-2 px-3">Returned: @returned.Count</span>
+    </div>
+</div>
+
+<!-- Filter tabs -->
+<ul class="nav nav-tabs mb-3" id="issueTabs">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#all">All (@Model.Count)</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#activeTab">Active (@active.Count)</a></li>
+    <li class="nav-item"><a class="nav-link text-danger" data-bs-toggle="tab" href="#overdueTab">Overdue (@overdue.Count)</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#returnedTab">Returned (@returned.Count)</a></li>
+</ul>
+
+<div class="tab-content">
+    @foreach (var (tabId, list) in new[] {
+        ("all",        Model.ToList()),
+        ("activeTab",  active),
+        ("overdueTab", overdue),
+        ("returnedTab",returned)
+    })
+    {
+        <div class="tab-pane fade @(tabId=="all"?"show active":"")" id="@tabId">
+            <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead style="background:#f8f9fa;">
+                                <tr>
+                                    <th class="px-4 py-3" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Member</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">CNIC / Service No</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Wing / Section</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Book</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Issue Date</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Due Date</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Status</th>
+                                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Fine</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!list.Any())
+                                {
+                                    <tr><td colspan="8" class="text-center py-4 text-muted">No records found.</td></tr>
+                                }
+                                @foreach (var ib in list)
+                                {
+                                    <tr class="@(ib.BookStatus=="Overdue"?"table-danger-subtle":"")">
+                                        <td class="px-4">
+                                            <div class="fw-medium" style="font-size:13px;">@ib.MemberName</div>
+                                        </td>
+                                        <td style="font-size:12px;">
+                                            <div>@ib.CNIC</div>
+                                            <div class="text-muted">@ib.ServiceNo</div>
+                                        </td>
+                                        <td style="font-size:12px;">
+                                            <span class="badge bg-light text-dark border">@ib.WingName</span>
+                                            <div class="text-muted mt-1">@ib.SectionName</div>
+                                        </td>
+                                        <td style="font-size:13px;">
+                                            <div class="fw-medium">@ib.BookTitle</div>
+                                            <div class="text-muted" style="font-size:11px;">@ib.BookNumber</div>
+                                        </td>
+                                        <td style="font-size:12px;">@ib.IssueDate.ToString("dd MMM yyyy")</td>
+                                        <td style="font-size:12px;">
+                                            <span class="@(ib.BookStatus=="Overdue"?"text-danger fw-medium":"")">
+                                                @ib.DueDate.ToString("dd MMM yyyy")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @switch (ib.BookStatus)
+                                            {
+                                                case "Active":
+                                                    <span class="badge bg-success-subtle text-success">Active</span>
+                                                    break;
+                                                case "Overdue":
+                                                    <span class="badge bg-danger">Overdue</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-secondary-subtle text-secondary">Returned</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td style="font-size:13px;">
+                                            @if (ib.PendingFine > 0)
+                                            {
+                                                <span class="text-danger fw-semibold">Rs. @ib.PendingFine.ToString("N0")</span>
+                                            }
+                                            else if (ib.IsReturned)
+                                            {
+                                                <span class="text-success">None</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
