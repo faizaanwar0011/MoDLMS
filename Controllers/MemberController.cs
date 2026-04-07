@@ -14,7 +14,7 @@ namespace MoDLibrary.Controllers
 
         public MemberController(IConfiguration config, IHubContext<NotificationHub> hub)
         {
-            _db  = new DatabaseHelper(config);
+            _db = new DatabaseHelper(config);
             _hub = hub;
         }
 
@@ -24,183 +24,73 @@ namespace MoDLibrary.Controllers
             return json == null ? null : JsonSerializer.Deserialize<UserSession>(json);
         }
 
-        private IActionResult RequireMember()
+        private IActionResult RequireMemberLogin()
         {
             var u = GetSession();
-            if (u == null) return RedirectToAction("Login", "Account");
+            if (u == null || u.Role != "Member")
+                return RedirectToAction("Login", "Account");
             ViewBag.User = u;
             return null!;
         }
 
-        // ── BROWSE ALL BOOKS (with live client-side filter) ───────────────────
-        public IActionResult Search(string? q)
+        // ── HOME — Physical Book Catalog (No Login) ───────────────
+        public IActionResult Index(string? q, string? category)
         {
-            var check = RequireMember(); if (check != null) return check;
             ViewBag.Query = q ?? "";
-            var books = _db.GetAllBooks().Where(b => b.IsActive).ToList();
+            ViewBag.Category = category ?? "";
+            ViewBag.Categories = _db.GetCategories();
+
+            List<Book> books;
+            if (!string.IsNullOrWhiteSpace(q))
+                books = _db.SearchBooks(q).ToList();
+            else
+                books = _db.GetAllBooks().Where(b => b.IsActive).ToList();
+
+            if (!string.IsNullOrWhiteSpace(category))
+                books = books.Where(b => b.Category == category).ToList();
+
             return View(books);
         }
 
-        // ── REQUEST FORM ──────────────────────────────────────────────────────
-        [HttpGet]
-        public IActionResult RequestBook(int bookId)
+        // ── BOOK DETAIL (No Login) ────────────────────────────────
+        public IActionResult BookDetail(int id)
         {
-            var check = RequireMember(); if (check != null) return check;
-            var book = _db.GetBookById(bookId);
+            var book = _db.GetBookById(id);
             if (book == null) return NotFound();
-            if (book.AvailableCopies <= 0)
+            var ratings = _db.GetBookRatings(id);
+            ViewBag.Ratings = ratings;
+            return View(book);
+        }
+
+        // ── EBOOKS (Login Required) ───────────────────────────────
+        public IActionResult EBooks()
+        {
+            var u = GetSession();
+            if (u == null)
             {
-                TempData["Error"] = "This book is currently not available.";
-                return RedirectToAction("Search");
+                TempData["Error"] = "Please login to access E-Books.";
+                return RedirectToAction("Login", "Account");
             }
-            var vm = new BookRequestViewModel
-            {
-                BookId    = book.BookId,
-                BookTitle = book.Title,
-                Wings     = _db.GetWings(),
-                Sections  = new List<Section>()
-            };
-            return View(vm);
+            ViewBag.User = u;
+            return View(_db.GetAllEBooks());
         }
 
-        [HttpPost]
-        public async Task<IActionResult> RequestBook(BookRequestViewModel model)
+        public IActionResult Subscriptions()
         {
-            var check = RequireMember(); if (check != null) return check;
-
-            var book = _db.GetBookById(model.BookId);
-            var bookTitle = book?.Title ?? $"Book #{model.BookId}";
-
-            var req = new BookRequest
+            var u = GetSession();
+            if (u == null)
             {
-                MemberName = model.MemberName,
-                CNIC = model.CNIC,
-                ServiceNo = model.ServiceNo,
-                WingId = model.WingId,
-                SectionId = model.SectionId,
-                BookId = model.BookId
-            };
-
-            var newId = _db.SubmitBookRequest(req);
-
-            // -1 matlab pehle se book issued hai
-            if (newId == -1)
-            {
-                // Form dobara dikhao wings ke saath
-                model.Wings = _db.GetWings();
-                model.Sections = _db.GetSectionsByWing(model.WingId);
-                ViewBag.Error = "You already have a book issued. Please return it before requesting another one.";
-                return View(model);
+                TempData["Error"] = "Please login to access Subscriptions.";
+                return RedirectToAction("Login", "Account");
             }
-
-            var notifPayload = new
-            {
-                requestId = newId,
-                memberName = model.MemberName,
-                bookId = model.BookId,
-                message = $"{model.MemberName} requested \"{bookTitle}\""
-            };
-
-            await _hub.Clients.Group("Librarians").SendAsync("NewBookRequest", notifPayload);
-            await _hub.Clients.Group("Admins").SendAsync("NewBookRequest", notifPayload);
-
-            TempData["Success"] = "Your request has been submitted. The librarian will notify you shortly.";
-            return RedirectToAction("RequestConfirmation", new { id = newId });
+            ViewBag.User = u;
+            return View(_db.GetSubscriptions());
         }
 
-        public IActionResult RequestConfirmation(int id)
-        {
-            var check = RequireMember(); if (check != null) return check;
-            ViewBag.RequestId = id;
-            return View();
-        }
-
-        // ── GET SECTIONS BY WING (AJAX) ───────────────────────────────────────
-        [HttpGet]
-        public IActionResult GetSections(int wingId)
-        {
-            var sections = _db.GetSectionsByWing(wingId);
-            return Json(sections);
-        }
-
-        // My Request Status page
-        public IActionResult MyRequests(string? cnic)
-        {
-            var check = RequireMember(); if (check != null) return check;
-            ViewBag.CNIC = cnic ?? "";
-            if (string.IsNullOrWhiteSpace(cnic))
-                return View(new List<BookRequest>());
-            var requests = _db.GetRequestsByCNIC(cnic);
-            return View(requests);
-        }
-
-        // ── BOOK SUGGESTIONS ──────────────────────────────────────────
-
-        [HttpGet]
-        public IActionResult SuggestBook()
-        {
-            var check = RequireMember(); if (check != null) return check;
-            return View(new BookSuggestion());
-        }
-
-        [HttpPost]
-        public IActionResult SuggestBook(BookSuggestion model)
-        {
-            var check = RequireMember(); if (check != null) return check;
-            _db.SubmitSuggestion(model);
-            TempData["Success"] = "Your book suggestion has been submitted. We will review it shortly!";
-            return RedirectToAction("MySuggestions", new { cnic = model.CNIC });
-        }
-
-        [HttpGet]
-        public IActionResult MySuggestions(string? cnic)
-        {
-            var check = RequireMember(); if (check != null) return check;
-            ViewBag.CNIC = cnic ?? "";
-            if (string.IsNullOrWhiteSpace(cnic))
-                return View(new List<BookSuggestion>());
-            return View(_db.GetSuggestionsByCNIC(cnic));
-        }
-        // ── RESERVE BOOK ──────────────────────────────────────────────
-        [HttpGet]
-        public IActionResult ReserveBook(int bookId)
-        {
-            var check = RequireMember(); if (check != null) return check;
-            var book = _db.GetBookById(bookId);
-            if (book == null) return NotFound();
-            ViewBag.Book = book;
-            return View();
-        }
-
-        [HttpPost]
-        public IActionResult ReserveBook(Reservation model)
-        {
-            var check = RequireMember(); if (check != null) return check;
-            var result = _db.ReserveBook(model);
-            if (result == -1)
-            {
-                TempData["Error"] = "You have already reserved this book.";
-                return RedirectToAction("Search");
-            }
-            TempData["Success"] = "Book reserved! You will be notified when it becomes available.";
-            return RedirectToAction("MyReservations", new { cnic = model.CNIC });
-        }
-
-        // ── MY RESERVATIONS ───────────────────────────────────────────
-        public IActionResult MyReservations(string? cnic)
-        {
-            var check = RequireMember(); if (check != null) return check;
-            ViewBag.CNIC = cnic ?? "";
-            if (string.IsNullOrWhiteSpace(cnic))
-                return View(new List<Reservation>());
-            return View(_db.GetReservationsByCNIC(cnic));
-        }
-
-        // ── RATE BOOK ─────────────────────────────────────────────────
+        // ── RATE BOOK ─────────────────────────────────────────────
         [HttpGet]
         public IActionResult RateBook(int bookId)
         {
-            var check = RequireMember(); if (check != null) return check;
             var book = _db.GetBookById(bookId);
             if (book == null) return NotFound();
             ViewBag.Book = book;
@@ -210,10 +100,40 @@ namespace MoDLibrary.Controllers
         [HttpPost]
         public IActionResult RateBook(BookRating model)
         {
-            var check = RequireMember(); if (check != null) return check;
             _db.AddRating(model);
             TempData["Success"] = "Thank you for your review!";
-            return RedirectToAction("Search");
+            return RedirectToAction("BookDetail", new { id = model.BookId });
+        }
+
+        // ── SUGGEST BOOK ──────────────────────────────────────────
+        [HttpGet]
+        public IActionResult SuggestBook()
+        {
+            return View(new BookSuggestion());
+        }
+
+        [HttpPost]
+        public IActionResult SuggestBook(BookSuggestion model)
+        {
+            _db.SubmitSuggestion(model);
+            TempData["Success"] = "Suggestion submitted successfully!";
+            return RedirectToAction("Index");
+        }
+
+        // ── MY SUGGESTIONS ────────────────────────────────────────
+        public IActionResult MySuggestions(string? cnic)
+        {
+            ViewBag.CNIC = cnic ?? "";
+            if (string.IsNullOrWhiteSpace(cnic))
+                return View(new List<BookSuggestion>());
+            return View(_db.GetSuggestionsByCNIC(cnic));
+        }
+
+        // ── GET SECTIONS BY WING (AJAX) ───────────────────────────
+        [HttpGet]
+        public IActionResult GetSections(int wingId)
+        {
+            return Json(_db.GetSectionsByWing(wingId));
         }
     }
 }

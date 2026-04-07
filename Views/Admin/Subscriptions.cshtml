@@ -1,0 +1,182 @@
+﻿@model List<MoDLibrary.Models.LibrarySubscription>
+@{
+    ViewData["Title"] = "Library Subscriptions";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    // Librarian: Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h5 class="fw-semibold mb-0">Library Subscriptions</h5>
+        <small class="text-muted">External library access management</small>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubModal">
+        <i class="bi bi-plus-circle me-2"></i>Add Subscription
+    </button>
+</div>
+
+<div class="row g-3 mb-4">
+    @foreach (var s in Model)
+    {
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100"
+                 style="border-radius:12px;@(!s.IsActive ? "opacity:.5;" : "")">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        @if (!string.IsNullOrEmpty(s.LogoPath))
+                        {
+                            <img src="@s.LogoPath" style="height:40px;object-fit:contain;" />
+                        }
+                        else
+                        {
+                            <div class="rounded d-flex align-items-center justify-content-center"
+                                 style="width:40px;height:40px;background:#e7f1ff;">
+                                <i class="bi bi-globe text-primary"></i>
+                            </div>
+                        }
+                        @if (s.IsActive)
+                        {
+                            <span class="badge bg-success-subtle text-success">Active</span>
+                        }
+                        else
+                        {
+
+                            <span class="badge bg-secondary-subtle text-secondary">Inactive</span>
+                        }
+                    </div>
+                    <h6 class="fw-bold mb-1">@s.LibraryName</h6>
+                    <p class="text-muted mb-3" style="font-size:12px;">@s.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@s.WebsiteUrl" target="_blank"
+                           class="btn btn-sm btn-outline-primary flex-grow-1">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Visit
+                        </a>
+                        <button class="btn btn-sm btn-outline-secondary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editSubModal"
+                                onclick="setEditSub(@s.SubscriptionId,'@s.LibraryName','@s.Description','@s.WebsiteUrl',@(s.IsActive ? "true" : "false"))">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <form asp-action="DeleteSubscription" method="post"
+                              onsubmit="return confirm('Remove this subscription?')">
+                            <input type="hidden" name="id" value="@s.SubscriptionId" />
+                            <button class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addSubModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+            <div class="modal-header">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-plus-circle me-2 text-primary"></i>Add Subscription
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AddSubscription" method="post" enctype="multipart/form-data">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Library Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="LibraryName" class="form-control"
+                               placeholder="e.g. Oxford Academic" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Website URL <span class="text-danger">*</span>
+                        </label>
+                        <input type="url" name="WebsiteUrl" class="form-control"
+                               placeholder="https://..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">Description</label>
+                        <textarea name="Description" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">Logo (Optional)</label>
+                        <input type="file" name="logo" class="form-control" accept="image/*" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary px-4">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editSubModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+            <div class="modal-header">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-pencil me-2 text-primary"></i>Edit Subscription
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="UpdateSubscription" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="SubscriptionId" id="editSubId" />
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">Library Name</label>
+                        <input type="text" name="LibraryName" id="editSubName"
+                               class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">Website URL</label>
+                        <input type="url" name="WebsiteUrl" id="editSubUrl"
+                               class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">Description</label>
+                        <textarea name="Description" id="editSubDesc"
+                                  class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="IsActive" id="editSubActive"
+                               class="form-check-input" value="true" />
+                        <label class="form-check-label" for="editSubActive">Active</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary px-4">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function setEditSub(id, name, desc, url, isActive) {
+            document.getElementById('editSubId').value      = id;
+            document.getElementById('editSubName').value    = name;
+            document.getElementById('editSubDesc').value    = desc;
+            document.getElementById('editSubUrl').value     = url;
+            document.getElementById('editSubActive').checked = isActive;
+        }
+    </script>
+}
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}

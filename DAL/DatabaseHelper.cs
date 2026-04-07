@@ -93,7 +93,7 @@ namespace MoDLibrary.DAL
             return list;
         }
 
-        public Book? GetBookById(int bookId)
+     /*   public Book? GetBookById(int bookId)
         {
             using var conn = GetConnection();
             conn.Open();
@@ -102,7 +102,7 @@ namespace MoDLibrary.DAL
             using var reader = cmd.ExecuteReader();
             if (reader.Read()) return MapBook(reader);
             return null;
-        }
+        }*/
 
         public void AddBook(Book b)
         {
@@ -148,22 +148,22 @@ namespace MoDLibrary.DAL
             cmd.ExecuteNonQuery();
         }
 
-        private Book MapBook(SqlDataReader r) => new Book
-        {
-            BookId          = (int)r["BookId"],
-            Title           = r["Title"].ToString()!,
-            Author          = r["Author"].ToString()!,
-            BookNumber      = r["BookNumber"].ToString()!,
-            ShelfLocation   = r["ShelfLocation"].ToString()!,
-            TotalCopies     = (int)r["TotalCopies"],
-            AvailableCopies = (int)r["AvailableCopies"],
-            Publisher       = r["Publisher"]    == DBNull.Value ? null : r["Publisher"].ToString(),
-            PublishedYear   = r["PublishedYear"] == DBNull.Value ? null : (int)r["PublishedYear"],
-            ISBN            = r["ISBN"]         == DBNull.Value ? null : r["ISBN"].ToString(),
-            Category        = r["Category"]     == DBNull.Value ? null : r["Category"].ToString(),
-            IsActive        = r.GetColumnSchema().Any(c => c.ColumnName == "IsActive") && r["IsActive"] != DBNull.Value && (bool)r["IsActive"],
-            Availability    = r["Availability"].ToString()!
-        };
+        //private Book MapBook(SqlDataReader r) => new Book
+        //{
+        //    BookId          = (int)r["BookId"],
+        //    Title           = r["Title"].ToString()!,
+        //    Author          = r["Author"].ToString()!,
+        //    BookNumber      = r["BookNumber"].ToString()!,
+        //    ShelfLocation   = r["ShelfLocation"].ToString()!,
+        //    TotalCopies     = (int)r["TotalCopies"],
+        //    AvailableCopies = (int)r["AvailableCopies"],
+        //    Publisher       = r["Publisher"]    == DBNull.Value ? null : r["Publisher"].ToString(),
+        //    PublishedYear   = r["PublishedYear"] == DBNull.Value ? null : (int)r["PublishedYear"],
+        //    ISBN            = r["ISBN"]         == DBNull.Value ? null : r["ISBN"].ToString(),
+        //    Category        = r["Category"]     == DBNull.Value ? null : r["Category"].ToString(),
+        //    IsActive        = r.GetColumnSchema().Any(c => c.ColumnName == "IsActive") && r["IsActive"] != DBNull.Value && (bool)r["IsActive"],
+        //    Availability    = r["Availability"].ToString()!
+        //};
 
         // ── BOOK REQUESTS ─────────────────────────────────────────────────────
 
@@ -969,6 +969,315 @@ namespace MoDLibrary.DAL
             }
             catch (Exception ex) { Console.WriteLine("MemberHistory: " + ex.Message); }
             return list;
+        }
+        // ── SHELVES ───────────────────────────────────────────────────
+
+        public List<Shelf> GetAllShelves()
+        {
+            var list = new List<Shelf>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetAllShelves", conn)
+                { CommandType = CommandType.StoredProcedure };
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(new Shelf
+                    {
+                        ShelfId = (int)r["ShelfId"],
+                        ShelfCode = r["ShelfCode"].ToString()!,
+                        RackLetter = r["RackLetter"].ToString()!,
+                        RowNumber = (int)r["RowNumber"],
+                        CategoryName = r["CategoryName"].ToString()!,
+                        CategoryCode = r["CategoryCode"].ToString()!,
+                        IsActive = (bool)r["IsActive"]
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("Shelves: " + ex.Message); }
+            return list;
+        }
+
+        public List<Shelf> GetShelvesByCategory(int categoryId)
+        {
+            var list = new List<Shelf>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetShelvesByCategory", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@CategoryId", categoryId);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(new Shelf
+                    {
+                        ShelfId = (int)r["ShelfId"],
+                        ShelfCode = r["ShelfCode"].ToString()!,
+                        RackLetter = r["RackLetter"].ToString()!,
+                        RowNumber = (int)r["RowNumber"]
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("ShelvesByCategory: " + ex.Message); }
+            return list;
+        }
+
+        public string GenerateBookId(int categoryId)
+        {
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GenerateBookId", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@CategoryId", categoryId);
+                using var r = cmd.ExecuteReader();
+                if (r.Read()) return r["BookId"].ToString()!;
+            }
+            catch (Exception ex) { Console.WriteLine("GenerateBookId: " + ex.Message); }
+            return "";
+        }
+
+        // ── BOOKS UPDATE ──────────────────────────────────────────────
+
+        public void AddBook(Book b, string coverPath)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_AddBook", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@Title", b.Title);
+            cmd.Parameters.AddWithValue("@Author", b.Author);
+            cmd.Parameters.AddWithValue("@BookNumber", b.BookNumber);
+            cmd.Parameters.AddWithValue("@ShelfId", b.ShelfId);
+            cmd.Parameters.AddWithValue("@TotalCopies", b.TotalCopies);
+            cmd.Parameters.AddWithValue("@Publisher", (object?)b.Publisher ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@PublishedYear", (object?)b.PublishedYear ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@ISBN", (object?)b.ISBN ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@CategoryId", b.CategoryId == 0 ? (object)DBNull.Value : b.CategoryId);
+            cmd.Parameters.AddWithValue("@CoverImagePath", string.IsNullOrEmpty(coverPath) ? (object)DBNull.Value : coverPath);
+            cmd.ExecuteNonQuery();
+        }
+
+        public void UpdateBook(Book b, string coverPath)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_UpdateBook", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@BookId", b.BookId);
+            cmd.Parameters.AddWithValue("@Title", b.Title);
+            cmd.Parameters.AddWithValue("@Author", b.Author);
+            cmd.Parameters.AddWithValue("@BookNumber", b.BookNumber);
+            cmd.Parameters.AddWithValue("@ShelfId", b.ShelfId);
+            cmd.Parameters.AddWithValue("@TotalCopies", b.TotalCopies);
+            cmd.Parameters.AddWithValue("@Publisher", (object?)b.Publisher ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@PublishedYear", (object?)b.PublishedYear ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@ISBN", (object?)b.ISBN ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@CategoryId", b.CategoryId == 0 ? (object)DBNull.Value : b.CategoryId);
+            cmd.Parameters.AddWithValue("@CoverImagePath", string.IsNullOrEmpty(coverPath) ? (object)DBNull.Value : coverPath);
+            cmd.ExecuteNonQuery();
+        }
+
+        public Book? GetBookById(int bookId)
+        {
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetBookById", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@BookId", bookId);
+                using var r = cmd.ExecuteReader();
+                if (r.Read()) return MapBook(r);
+            }
+            catch (Exception ex) { Console.WriteLine("GetBookById: " + ex.Message); }
+            return null;
+        }
+
+        private Book MapBook(SqlDataReader r) => new Book
+        {
+            BookId = (int)r["BookId"],
+            Title = r["Title"].ToString()!,
+            Author = r["Author"].ToString()!,
+            BookNumber = r["BookNumber"].ToString()!,
+            ShelfLocation = r["ShelfLocation"].ToString()!,
+            TotalCopies = (int)r["TotalCopies"],
+            AvailableCopies = (int)r["AvailableCopies"],
+            Publisher = r["Publisher"] == DBNull.Value ? null : r["Publisher"].ToString(),
+            PublishedYear = r["PublishedYear"] == DBNull.Value ? null : (int?)r["PublishedYear"],
+            ISBN = r["ISBN"] == DBNull.Value ? null : r["ISBN"].ToString(),
+            Category = r["Category"].ToString()!,
+            CategoryCode = r["CategoryCode"].ToString()!,
+            CategoryId = Convert.ToInt32(r["CategoryId"]),
+            ShelfId = Convert.ToInt32(r["ShelfId"]),
+            ShelfCode = r["ShelfCode"].ToString()!,
+            RackLetter = r["RackLetter"].ToString()!,
+            CoverImagePath = r["CoverImagePath"] == DBNull.Value ? null : r["CoverImagePath"].ToString(),
+            IsActive = r["IsActive"] == DBNull.Value ? false : (bool)r["IsActive"],
+            Availability = r["Availability"].ToString()!,
+            AvgRating = r.GetColumnSchema().Any(c => c.ColumnName == "AvgRating") ?
+                              Convert.ToDouble(r["AvgRating"]) : 0,
+            TotalRatings = r.GetColumnSchema().Any(c => c.ColumnName == "TotalRatings") ?
+                              Convert.ToInt32(r["TotalRatings"]) : 0
+        };
+
+        // ── EBOOKS ────────────────────────────────────────────────────
+
+        public List<EBook> GetAllEBooks()
+        {
+            var list = new List<EBook>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetAllEBooks", conn)
+                { CommandType = CommandType.StoredProcedure };
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(MapEBook(r));
+            }
+            catch (Exception ex) { Console.WriteLine("EBooks: " + ex.Message); }
+            return list;
+        }
+
+        public void AddEBook(EBook e, string filePath, string coverPath)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_AddEBook", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@Title", e.Title);
+            cmd.Parameters.AddWithValue("@Author", e.Author);
+            cmd.Parameters.AddWithValue("@CategoryId", (object?)e.CategoryId ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@Description", (object?)e.Description ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@FilePath", filePath);
+            cmd.Parameters.AddWithValue("@CoverImagePath", string.IsNullOrEmpty(coverPath) ? (object)DBNull.Value : coverPath);
+            cmd.Parameters.AddWithValue("@FileSize", (object?)e.FileSize ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@TotalPages", (object?)e.TotalPages ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@PublishedYear", (object?)e.PublishedYear ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@ISBN", (object?)e.ISBN ?? DBNull.Value);
+            cmd.ExecuteNonQuery();
+        }
+
+        public void DeleteEBook(int id)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_DeleteEBook", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@EBookId", id);
+            cmd.ExecuteNonQuery();
+        }
+
+        private EBook MapEBook(SqlDataReader r) => new EBook
+        {
+            EBookId = (int)r["EBookId"],
+            Title = r["Title"].ToString()!,
+            Author = r["Author"].ToString()!,
+            Category = r["Category"].ToString()!,
+            Description = r["Description"] == DBNull.Value ? null : r["Description"].ToString(),
+            FilePath = r["FilePath"].ToString()!,
+            CoverImagePath = r["CoverImagePath"] == DBNull.Value ? null : r["CoverImagePath"].ToString(),
+            FileSize = r["FileSize"] == DBNull.Value ? null : r["FileSize"].ToString(),
+            TotalPages = r["TotalPages"] == DBNull.Value ? null : (int?)r["TotalPages"],
+            PublishedYear = r["PublishedYear"] == DBNull.Value ? null : (int?)r["PublishedYear"],
+            ISBN = r["ISBN"] == DBNull.Value ? null : r["ISBN"].ToString(),
+            IsActive = (bool)r["IsActive"],
+            UploadedAt = (DateTime)r["UploadedAt"]
+        };
+
+        // ── SUBSCRIPTIONS ─────────────────────────────────────────────
+
+        public List<LibrarySubscription> GetSubscriptions()
+        {
+            var list = new List<LibrarySubscription>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetSubscriptions", conn)
+                { CommandType = CommandType.StoredProcedure };
+                using var r = cmd.ExecuteReader();
+                while (r.Read()) list.Add(MapSubscription(r));
+            }
+            catch (Exception ex) { Console.WriteLine("Subscriptions: " + ex.Message); }
+            return list;
+        }
+
+        public List<LibrarySubscription> GetAllSubscriptions()
+        {
+            var list = new List<LibrarySubscription>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetAllSubscriptions", conn)
+                { CommandType = CommandType.StoredProcedure };
+                using var r = cmd.ExecuteReader();
+                while (r.Read()) list.Add(MapSubscription(r));
+            }
+            catch (Exception ex) { Console.WriteLine("AllSubscriptions: " + ex.Message); }
+            return list;
+        }
+
+        public void AddSubscription(LibrarySubscription s, string logoPath)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_AddSubscription", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@LibraryName", s.LibraryName);
+            cmd.Parameters.AddWithValue("@Description", (object?)s.Description ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@WebsiteUrl", s.WebsiteUrl);
+            cmd.Parameters.AddWithValue("@LogoPath", string.IsNullOrEmpty(logoPath) ? (object)DBNull.Value : logoPath);
+            cmd.ExecuteNonQuery();
+        }
+
+        public void UpdateSubscription(LibrarySubscription s)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_UpdateSubscription", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@SubscriptionId", s.SubscriptionId);
+            cmd.Parameters.AddWithValue("@LibraryName", s.LibraryName);
+            cmd.Parameters.AddWithValue("@Description", (object?)s.Description ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@WebsiteUrl", s.WebsiteUrl);
+            cmd.Parameters.AddWithValue("@IsActive", s.IsActive);
+            cmd.ExecuteNonQuery();
+        }
+
+        public void DeleteSubscription(int id)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_DeleteSubscription", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@SubscriptionId", id);
+            cmd.ExecuteNonQuery();
+        }
+
+        private LibrarySubscription MapSubscription(SqlDataReader r) => new LibrarySubscription
+        {
+            SubscriptionId = (int)r["SubscriptionId"],
+            LibraryName = r["LibraryName"].ToString()!,
+            Description = r["Description"] == DBNull.Value ? null : r["Description"].ToString(),
+            WebsiteUrl = r["WebsiteUrl"].ToString()!,
+            LogoPath = r["LogoPath"] == DBNull.Value ? null : r["LogoPath"].ToString(),
+            IsActive = (bool)r["IsActive"],
+            AddedAt = (DateTime)r["AddedAt"]
+        };
+
+        // ── LIBRARIAN DIRECT ISSUE ────────────────────────────────────
+
+        public int LibrarianIssueBook(BookRequest req)
+        {
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_LibrarianIssueBook", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@MemberName", req.MemberName);
+                cmd.Parameters.AddWithValue("@CNIC", req.CNIC);
+                cmd.Parameters.AddWithValue("@ServiceNo", req.ServiceNo);
+                cmd.Parameters.AddWithValue("@WingId", req.WingId);
+                cmd.Parameters.AddWithValue("@SectionId", req.SectionId);
+                cmd.Parameters.AddWithValue("@BookId", req.BookId);
+                var outParam = new SqlParameter("@NewRequestId", SqlDbType.Int)
+                { Direction = ParameterDirection.Output };
+                cmd.Parameters.Add(outParam);
+                cmd.ExecuteNonQuery();
+                return (int)outParam.Value;
+            }
+            catch (Exception ex) { Console.WriteLine("LibrarianIssue: " + ex.Message); }
+            return 0;
         }
     }
 }

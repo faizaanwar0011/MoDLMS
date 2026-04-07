@@ -10,12 +10,27 @@ namespace MoDLibrary.Controllers
         private readonly DatabaseHelper _db;
         public AccountController(IConfiguration config) { _db = new DatabaseHelper(config); }
 
+        // Login page pe redirect — agar already logged in
         [HttpGet]
         public IActionResult Login()
         {
             if (HttpContext.Session.GetString("User") != null)
                 return RedirectToRole();
             return View();
+        }
+
+        // Continue as Member — seedha catalog
+        public IActionResult ContinueAsMember()
+        {
+            var memberSession = new UserSession
+            {
+                UserId = 0,
+                FullName = "Guest Member",
+                Username = "member",
+                Role = "Member"
+            };
+            HttpContext.Session.SetString("User", JsonSerializer.Serialize(memberSession));
+            return RedirectToAction("Index", "Member");
         }
 
         [HttpPost]
@@ -32,7 +47,7 @@ namespace MoDLibrary.Controllers
         }
 
         // Member bina login ke seedha book browse page pe ja sakta hai
-        public IActionResult ContinueAsMember()
+      /*  public IActionResult ContinueAsMember()
         {
             var memberSession = new UserSession
             {
@@ -43,7 +58,7 @@ namespace MoDLibrary.Controllers
             };
             HttpContext.Session.SetString("User", JsonSerializer.Serialize(memberSession));
             return RedirectToAction("Search", "Member");
-        }
+        }*/
 
         public IActionResult Logout()
         {

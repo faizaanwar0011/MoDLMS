@@ -50,15 +50,19 @@ namespace MoDLibrary.Controllers
         {
             var check = RequireAdmin(); if (check != null) return check;
             ViewBag.Categories = _db.GetCategories();
+            ViewBag.Shelves = new List<Shelf>();
             return View(new Book());
         }
 
         [HttpPost]
-        public IActionResult AddBook(Book model)
+        public async Task<IActionResult> AddBook(Book model, IFormFile? coverImage)
         {
             var check = RequireAdmin(); if (check != null) return check;
-            _db.AddBook(model);
-            TempData["Success"] = "Book added successfully.";
+            var coverPath = await SaveImage(coverImage, "covers");
+            // Auto generate book ID
+            model.BookNumber = _db.GenerateBookId(model.CategoryId);
+            _db.AddBook(model, coverPath);
+            TempData["Success"] = "Book added. ID: " + model.BookNumber;
             return RedirectToAction("Books");
         }
 
@@ -69,15 +73,17 @@ namespace MoDLibrary.Controllers
             var book = _db.GetBookById(id);
             if (book == null) return NotFound();
             ViewBag.Categories = _db.GetCategories();
+            ViewBag.Shelves = _db.GetShelvesByCategory(book.CategoryId);
             return View(book);
         }
 
         [HttpPost]
-        public IActionResult EditBook(Book model)
+        public async Task<IActionResult> EditBook(Book model, IFormFile? coverImage)
         {
             var check = RequireAdmin(); if (check != null) return check;
-            _db.UpdateBook(model);
-            TempData["Success"] = "Book updated successfully.";
+            var coverPath = await SaveImage(coverImage, "covers");
+            _db.UpdateBook(model, coverPath);
+            TempData["Success"] = "Book updated.";
             return RedirectToAction("Books");
         }
 
@@ -88,6 +94,83 @@ namespace MoDLibrary.Controllers
             _db.DeleteBook(id);
             TempData["Success"] = "Book removed from catalog.";
             return RedirectToAction("Books");
+        }
+
+        // ── EBOOKS ────────────────────────────────────────────────────
+
+        public IActionResult EBooks()
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            return View(_db.GetAllEBooks());
+        }
+
+        [HttpGet]
+        public IActionResult AddEBook()
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            ViewBag.Categories = _db.GetCategories();
+            return View(new EBook());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddEBook(EBook model, IFormFile? pdfFile, IFormFile? coverImage)
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            if (pdfFile == null)
+            {
+                TempData["Error"] = "PDF file is required.";
+                return RedirectToAction("EBooks");
+            }
+            var filePath = await SaveFile(pdfFile, "ebooks");
+            var coverPath = await SaveImage(coverImage, "covers");
+            model.FileSize = (pdfFile.Length / 1024.0 / 1024.0).ToString("F1") + " MB";
+            _db.AddEBook(model, filePath, coverPath);
+            TempData["Success"] = "E-Book uploaded successfully.";
+            return RedirectToAction("EBooks");
+        }
+
+        [HttpPost]
+        public IActionResult DeleteEBook(int id)
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            _db.DeleteEBook(id);
+            TempData["Success"] = "E-Book removed.";
+            return RedirectToAction("EBooks");
+        }
+        // ── SUBSCRIPTIONS ─────────────────────────────────────────────
+
+        public IActionResult Subscriptions()
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            return View(_db.GetAllSubscriptions());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddSubscription(LibrarySubscription model, IFormFile? logo)
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            var logoPath = await SaveImage(logo, "logos");
+            _db.AddSubscription(model, logoPath);
+            TempData["Success"] = "Subscription added.";
+            return RedirectToAction("Subscriptions");
+        }
+
+        [HttpPost]
+        public IActionResult UpdateSubscription(LibrarySubscription model)
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            _db.UpdateSubscription(model);
+            TempData["Success"] = "Subscription updated.";
+            return RedirectToAction("Subscriptions");
+        }
+
+        [HttpPost]
+        public IActionResult DeleteSubscription(int id)
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            _db.DeleteSubscription(id);
+            TempData["Success"] = "Subscription removed.";
+            return RedirectToAction("Subscriptions");
         }
 
         // ── ISSUED BOOKS ──────────────────────────────────────────────────────
@@ -174,9 +257,48 @@ namespace MoDLibrary.Controllers
             TempData["Success"] = "Librarian deactivated.";
             return RedirectToAction("Librarians");
         }
+        // ── SHELVES ───────────────────────────────────────────────────
+
+        public IActionResult Shelves()
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            return View(_db.GetAllShelves());
+        }
+
+        // ── FILE UPLOAD HELPERS ───────────────────────────────────────
+
+        private async Task<string> SaveImage(IFormFile? file, string folder)
+        {
+            if (file == null || file.Length == 0) return "";
+            var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", folder);
+            Directory.CreateDirectory(uploads);
+            var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+            var filePath = Path.Combine(uploads, fileName);
+            using var stream = new FileStream(filePath, FileMode.Create);
+            await file.CopyToAsync(stream);
+            return $"/uploads/{folder}/{fileName}";
+        }
+
+        private async Task<string> SaveFile(IFormFile file, string folder)
+        {
+            var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", folder);
+            Directory.CreateDirectory(uploads);
+            var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+            var filePath = Path.Combine(uploads, fileName);
+            using var stream = new FileStream(filePath, FileMode.Create);
+            await file.CopyToAsync(stream);
+            return $"/uploads/{folder}/{fileName}";
+        }
 
         // ── CATEGORIES ────────────────────────────────────────────────
-
+        [HttpGet]
+        public IActionResult GetShelvesByCategory(int categoryId)
+        {
+            var u = GetSession();
+            if (u == null) return Unauthorized();
+            var shelves = _db.GetShelvesByCategory(categoryId);
+            return Json(shelves);
+        }
         public IActionResult Categories()
         {
             var check = RequireAdmin(); if (check != null) return check;
@@ -281,6 +403,15 @@ namespace MoDLibrary.Controllers
         {
             var check = RequireAdmin(); if (check != null) return check;
             return View(_db.GetPopularBooks());
+        }
+
+        [HttpGet]
+        public IActionResult GetBookId(int categoryId)
+        {
+            var u = GetSession();
+            if (u == null) return Unauthorized();
+            var id = _db.GenerateBookId(categoryId);
+            return Json(new { bookId = id });
         }
     }
 }

@@ -58,28 +58,29 @@ namespace MoDLibrary.Controllers
         }
 
         // ── ALL BOOKS ─────────────────────────────────────────────────────────
-        public IActionResult Books()
-        {
-            var check = RequireLibrarian(); if (check != null) return check;
-            return View(_db.GetAllBooks());
-        }
+        // ── BOOKS — updated with cover + shelf ───────────────────────
 
         [HttpGet]
         public IActionResult AddBook()
         {
             var check = RequireLibrarian(); if (check != null) return check;
             ViewBag.Categories = _db.GetCategories();
+            ViewBag.Shelves = new List<Shelf>();
             return View(new Book());
         }
 
         [HttpPost]
-        public IActionResult AddBook(Book model)
+        public async Task<IActionResult> AddBook(Book model, IFormFile? coverImage)
         {
             var check = RequireLibrarian(); if (check != null) return check;
-            _db.AddBook(model);
-            TempData["Success"] = "Book added to catalog.";
+            var coverPath = await SaveImage(coverImage, "covers");
+            // Auto generate book ID
+            model.BookNumber = _db.GenerateBookId(model.CategoryId);
+            _db.AddBook(model, coverPath);
+            TempData["Success"] = "Book added. ID: " + model.BookNumber;
             return RedirectToAction("Books");
         }
+
         [HttpGet]
         public IActionResult EditBook(int id)
         {
@@ -87,18 +88,148 @@ namespace MoDLibrary.Controllers
             var book = _db.GetBookById(id);
             if (book == null) return NotFound();
             ViewBag.Categories = _db.GetCategories();
+            ViewBag.Shelves = _db.GetShelvesByCategory(book.CategoryId);
             return View(book);
         }
 
         [HttpPost]
-        public IActionResult EditBook(Book model)
+        public async Task<IActionResult> EditBook(Book model, IFormFile? coverImage)
         {
             var check = RequireLibrarian(); if (check != null) return check;
-            _db.UpdateBook(model);
+            var coverPath = await SaveImage(coverImage, "covers");
+            _db.UpdateBook(model, coverPath);
             TempData["Success"] = "Book updated.";
             return RedirectToAction("Books");
         }
+        [HttpPost]
+        public IActionResult DeleteBook(int id)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            _db.DeleteBook(id);
+            TempData["Success"] = "Book removed from catalog.";
+            return RedirectToAction("Books");
+        }
 
+        // ── EBOOKS ────────────────────────────────────────────────────
+
+        public IActionResult EBooks()
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            return View(_db.GetAllEBooks());
+        }
+
+        [HttpGet]
+        public IActionResult AddEBook()
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            ViewBag.Categories = _db.GetCategories();
+            return View(new EBook());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddEBook(EBook model, IFormFile? pdfFile, IFormFile? coverImage)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            if (pdfFile == null)
+            {
+                TempData["Error"] = "PDF file is required.";
+                return RedirectToAction("EBooks");
+            }
+            var filePath = await SaveFile(pdfFile, "ebooks");
+            var coverPath = await SaveImage(coverImage, "covers");
+            model.FileSize = (pdfFile.Length / 1024.0 / 1024.0).ToString("F1") + " MB";
+            _db.AddEBook(model, filePath, coverPath);
+            TempData["Success"] = "E-Book uploaded successfully.";
+            return RedirectToAction("EBooks");
+        }
+
+        [HttpPost]
+        public IActionResult DeleteEBook(int id)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            _db.DeleteEBook(id);
+            TempData["Success"] = "E-Book removed.";
+            return RedirectToAction("EBooks");
+        }
+
+        // ── SUBSCRIPTIONS ─────────────────────────────────────────────
+
+        public IActionResult Subscriptions()
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            return View(_db.GetAllSubscriptions());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddSubscription(LibrarySubscription model, IFormFile? logo)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            var logoPath = await SaveImage(logo, "logos");
+            _db.AddSubscription(model, logoPath);
+            TempData["Success"] = "Subscription added.";
+            return RedirectToAction("Subscriptions");
+        }
+
+        [HttpPost]
+        public IActionResult UpdateSubscription(LibrarySubscription model)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            _db.UpdateSubscription(model);
+            TempData["Success"] = "Subscription updated.";
+            return RedirectToAction("Subscriptions");
+        }
+
+        [HttpPost]
+        public IActionResult DeleteSubscription(int id)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            _db.DeleteSubscription(id);
+            TempData["Success"] = "Subscription removed.";
+            return RedirectToAction("Subscriptions");
+        }
+
+        // ── SHELVES ───────────────────────────────────────────────────
+
+        public IActionResult Shelves()
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            return View(_db.GetAllShelves());
+        }
+
+        // ── FILE UPLOAD HELPERS ───────────────────────────────────────
+
+        private async Task<string> SaveImage(IFormFile? file, string folder)
+        {
+            if (file == null || file.Length == 0) return "";
+            var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", folder);
+            Directory.CreateDirectory(uploads);
+            var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+            var filePath = Path.Combine(uploads, fileName);
+            using var stream = new FileStream(filePath, FileMode.Create);
+            await file.CopyToAsync(stream);
+            return $"/uploads/{folder}/{fileName}";
+        }
+
+        private async Task<string> SaveFile(IFormFile file, string folder)
+        {
+            var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", folder);
+            Directory.CreateDirectory(uploads);
+            var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+            var filePath = Path.Combine(uploads, fileName);
+            using var stream = new FileStream(filePath, FileMode.Create);
+            await file.CopyToAsync(stream);
+            return $"/uploads/{folder}/{fileName}";
+        }
+
+        // ── AJAX — Get Shelves by Category ───────────────────────────
+        [HttpGet]
+        public IActionResult GetShelvesByCategory(int categoryId)
+        {
+            var u = GetSession();
+            if (u == null) return Unauthorized();
+            var shelves = _db.GetShelvesByCategory(categoryId);
+            return Json(shelves);
+        }
         // ── REQUESTS ─────────────────────────────────────────────────────────
         public IActionResult Requests()
         {
@@ -269,5 +400,47 @@ namespace MoDLibrary.Controllers
             var check = RequireLibrarian(); if (check != null) return check;
             return View(_db.GetPopularBooks());
         }
+        // ── DIRECT ISSUE BOOK ─────────────────────────────────────────
+
+        [HttpGet]
+        public IActionResult IssueBookDirect()
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            ViewBag.Wings = _db.GetWings();
+            ViewBag.Books = _db.GetAllBooks().Where(b => b.IsActive && b.AvailableCopies > 0).ToList();
+            return View(new BookRequest());
+        }
+
+        [HttpPost]
+        public IActionResult IssueBookDirect(BookRequest model)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            var result = _db.LibrarianIssueBook(model);
+            if (result == -1)
+            {
+                TempData["Error"] = "Book is not available.";
+                return RedirectToAction("IssueBookDirect");
+            }
+            if (result == -2)
+            {
+                TempData["Error"] = "This member already has a book issued. Return first.";
+                return RedirectToAction("IssueBookDirect");
+            }
+            TempData["Success"] = "Book issued successfully! Due date: " +
+                DateTime.Now.AddDays(15).ToString("dd MMM yyyy");
+            return RedirectToAction("IssuedBooks");
+        }
+
+     
+
+        [HttpGet]
+        public IActionResult GetBookId(int categoryId)
+        {
+            var u = GetSession();
+            if (u == null) return Unauthorized();
+            var id = _db.GenerateBookId(categoryId);
+            return Json(new { bookId = id });
+        }
+        }
     }
-}
+

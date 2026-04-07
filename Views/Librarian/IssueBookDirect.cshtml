@@ -1,0 +1,178 @@
+﻿@model MoDLibrary.Models.BookRequest
+@{
+    ViewData["Title"] = "Issue Book";
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+    var books = ViewBag.Books as List<MoDLibrary.Models.Book> ?? new();
+    var wings = ViewBag.Wings as List<MoDLibrary.Models.Wing> ?? new();
+}
+
+<div class="d-flex align-items-center mb-4">
+    <a asp-action="IssuedBooks" class="btn btn-sm btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h5 class="fw-semibold mb-0">Issue Book to Member</h5>
+        <small class="text-muted">Member has come physically — fill in details to issue book</small>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+            <div class="card-header bg-white border-bottom px-4 py-3">
+                <h6 class="fw-semibold mb-0">
+                    <i class="bi bi-bookmark-plus me-2 text-primary"></i>Issue Form
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="IssueBookDirect" method="post">
+
+                    <!-- Book Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Select Book <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="BookId" class="form-select" required
+                                onchange="showBookInfo(this)">
+                            <option value="">— Search and select a book —</option>
+                            @foreach (var b in books)
+                            {
+                                <option value="@b.BookId"
+                                        data-rack="@b.RackLetter"
+                                        data-shelf="@b.ShelfCode"
+                                        data-copies="@b.AvailableCopies">
+                                    @b.BookNumber — @b.Title (@b.AvailableCopies copies)
+                                </option>
+                            }
+                        </select>
+                        <!-- Book location info -->
+                        <div id="bookInfo" class="mt-2" style="display:none;">
+                            <span class="badge bg-info-subtle text-info" style="font-size:12px;">
+                                <i class="bi bi-geo-alt me-1"></i>
+                                Location: Rack <span id="bookRack"></span> —
+                                Shelf <span id="bookShelf"></span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <!-- Member Details -->
+                    <div class="mb-3" style="font-size:13px;color:#6c757d;font-weight:500;
+                                             text-transform:uppercase;letter-spacing:.5px;">
+                        Member Information
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Full Name <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="MemberName" class="form-control"
+                               placeholder="Member's full name" required />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                CNIC <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="CNIC" class="form-control"
+                                   placeholder="e.g. 42201-1234567-1"
+                                   maxlength="15" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Service Number <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="ServiceNo" class="form-control"
+                                   placeholder="e.g. ER-111" required />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Wing <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="WingId" class="form-select" required
+                                    onchange="loadSections(this.value)">
+                                <option value="">— Select Wing —</option>
+                                @foreach (var w in wings)
+                                {
+                                    <option value="@w.WingId">@w.WingName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" style="font-size:13px;">
+                                Section <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="SectionId" class="form-select"
+                                    id="sectionSelect" required disabled>
+                                <option value="">— Select Wing first —</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Info -->
+                    <div class="alert alert-info d-flex gap-2 mb-4" style="font-size:13px;">
+                        <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+                        <div>
+                            Book will be issued for <strong>15 days</strong>.
+                            Due date: <strong>@DateTime.Now.AddDays(15).ToString("dd MMM yyyy")</strong>.
+                            Fine of <strong>Rs. 50/day</strong> will apply after due date.
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary btn-lg px-5">
+                            <i class="bi bi-bookmark-check me-2"></i>Issue Book
+                        </button>
+                        <a asp-action="IssuedBooks"
+                           class="btn btn-outline-secondary btn-lg px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function showBookInfo(sel) {
+            const opt = sel.options[sel.selectedIndex];
+            const info = document.getElementById('bookInfo');
+            if (sel.value) {
+                document.getElementById('bookRack').textContent  = opt.dataset.rack;
+                document.getElementById('bookShelf').textContent = opt.dataset.shelf;
+                info.style.display = 'block';
+            } else {
+                info.style.display = 'none';
+            }
+        }
+
+        function loadSections(wingId) {
+            const sel = document.getElementById('sectionSelect');
+            if (!wingId) { sel.innerHTML = '<option value="">— Select Wing first —</option>'; sel.disabled = true; return; }
+            sel.disabled = true;
+            sel.innerHTML = '<option value="">Loading…</option>';
+            fetch('/Librarian/GetSections?wingId=' + wingId)
+                .then(r => r.json())
+                .then(data => {
+                    sel.innerHTML = '<option value="">— Select Section —</option>';
+                    data.forEach(s => {
+                        const o = document.createElement('option');
+                        o.value = s.sectionId;
+                        o.textContent = s.sectionName;
+                        sel.appendChild(o);
+                    });
+                    sel.disabled = false;
+                });
+        }
+    </script>
+}
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}

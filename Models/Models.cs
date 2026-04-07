@@ -44,6 +44,13 @@ namespace MoDLibrary.Models
         public string? Category { get; set; }
         public bool IsActive { get; set; }
         public string Availability { get; set; } = "";
+        public string? CoverImagePath { get; set; }
+        public int ShelfId { get; set; }
+        public string ShelfCode { get; set; } = "";
+        public string RackLetter { get; set; } = "";
+        public string CategoryCode { get; set; } = "";
+        public double AvgRating { get; set; }
+        public int TotalRatings { get; set; }
     }
 
     public class BookRequest
@@ -287,5 +294,45 @@ namespace MoDLibrary.Models
         public decimal FineAmount { get; set; }
         public bool FinePaid { get; set; }
         public int RecordId { get; set; }
+    }
+    public class Shelf
+    {
+        public int ShelfId { get; set; }
+        public int CategoryId { get; set; }
+        public string RackLetter { get; set; } = "";
+        public int RowNumber { get; set; }
+        public string ShelfCode { get; set; } = "";
+        public string CategoryName { get; set; } = "";
+        public string CategoryCode { get; set; } = "";
+        public bool IsActive { get; set; }
+    }
+
+    public class EBook
+    {
+        public int EBookId { get; set; }
+        public string Title { get; set; } = "";
+        public string Author { get; set; } = "";
+        public int? CategoryId { get; set; }
+        public string Category { get; set; } = "";
+        public string? Description { get; set; }
+        public string FilePath { get; set; } = "";
+        public string? CoverImagePath { get; set; }
+        public string? FileSize { get; set; }
+        public int? TotalPages { get; set; }
+        public int? PublishedYear { get; set; }
+        public string? ISBN { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime UploadedAt { get; set; }
+    }
+
+    public class LibrarySubscription
+    {
+        public int SubscriptionId { get; set; }
+        public string LibraryName { get; set; } = "";
+        public string? Description { get; set; }
+        public string WebsiteUrl { get; set; } = "";
+        public string? LogoPath { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime AddedAt { get; set; }
     }
 }
