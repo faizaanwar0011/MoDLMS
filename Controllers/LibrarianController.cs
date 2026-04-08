@@ -430,8 +430,15 @@ namespace MoDLibrary.Controllers
                 DateTime.Now.AddDays(15).ToString("dd MMM yyyy");
             return RedirectToAction("IssuedBooks");
         }
+        public IActionResult Books()
+        {
+            var check = RequireLibrarian();
+            if (check != null) return check;
 
-     
+            var books = _db.GetAllBooks();
+            return View(books);
+        }
+
 
         [HttpGet]
         public IActionResult GetBookId(int categoryId)
