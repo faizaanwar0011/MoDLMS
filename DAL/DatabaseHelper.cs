@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using MoDLibrary.Models;
 using System.Data;
+using System.Diagnostics.Contracts;
 
 namespace MoDLibrary.DAL
 {
@@ -940,7 +941,7 @@ namespace MoDLibrary.DAL
 
         // ── MEMBER HISTORY ────────────────────────────────────────────
 
-        public List<MemberHistoryRecord> GetMemberHistory(string cnic)
+        public List<MemberHistoryRecord> GetMemberHistory(string searchTerm)
         {
             var list = new List<MemberHistoryRecord>();
             try
@@ -948,7 +949,7 @@ namespace MoDLibrary.DAL
                 using var conn = GetConnection(); conn.Open();
                 using var cmd = new SqlCommand("sp_GetMemberHistory", conn)
                 { CommandType = CommandType.StoredProcedure };
-                cmd.Parameters.AddWithValue("@CNIC", cnic);
+                cmd.Parameters.AddWithValue("@SearchTerm", searchTerm);
                 using var r = cmd.ExecuteReader();
                 while (r.Read())
                     list.Add(new MemberHistoryRecord
@@ -1134,6 +1135,8 @@ namespace MoDLibrary.DAL
             return list;
         }
 
+     
+
         public void AddEBook(EBook e, string filePath, string coverPath)
         {
             using var conn = GetConnection(); conn.Open();
@@ -1279,5 +1282,7 @@ namespace MoDLibrary.DAL
             catch (Exception ex) { Console.WriteLine("LibrarianIssue: " + ex.Message); }
             return 0;
         }
+
+       
     }
 }

@@ -378,13 +378,13 @@ namespace MoDLibrary.Controllers
         }
 
         // ── MEMBER HISTORY ────────────────────────────────────────────
-        public IActionResult MemberHistory(string? cnic)
+        public IActionResult MemberHistory(string? name)
         {
             var check = RequireLibrarian(); if (check != null) return check;
-            ViewBag.CNIC = cnic ?? "";
-            if (string.IsNullOrWhiteSpace(cnic))
+            ViewBag.MemberName = name ?? "";
+            if (string.IsNullOrWhiteSpace(name))
                 return View(new List<MemberHistoryRecord>());
-            return View(_db.GetMemberHistory(cnic));
+            return View(_db.GetMemberHistory(name));
         }
 
         // ── RATINGS ───────────────────────────────────────────────────
@@ -407,6 +407,7 @@ namespace MoDLibrary.Controllers
         {
             var check = RequireLibrarian(); if (check != null) return check;
             ViewBag.Wings = _db.GetWings();
+          //  ViewBag.Wings.Sections=_db.GetSectionsByWingId();
             ViewBag.Books = _db.GetAllBooks().Where(b => b.IsActive && b.AvailableCopies > 0).ToList();
             return View(new BookRequest());
         }
@@ -448,6 +449,13 @@ namespace MoDLibrary.Controllers
             var id = _db.GenerateBookId(categoryId);
             return Json(new { bookId = id });
         }
+        [HttpGet]
+        public IActionResult GetSections(int wingId)
+        {
+            var sections= _db.GetSectionsByWing(wingId);
+            return Json(sections);
+        }
         }
     }
-
+//75734-7457567-5 
+//86785-5758684-8
