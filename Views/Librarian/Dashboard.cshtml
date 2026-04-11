@@ -46,50 +46,60 @@
 
 <!-- Pending Requests + Overdue Books -->
 <div class="row g-3">
+
+    <!-- Today's Issued Books -->
     <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
             <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
                 <span class="fw-semibold" style="font-size:14px;">
-                    <i class="bi bi-inbox me-2 text-warning"></i>Pending Requests
-                    @if (Model.Stats.PendingRequests > 0)
-                    {
-                        <span class="badge bg-warning text-dark ms-1">@Model.Stats.PendingRequests</span>
-                    }
+                    <i class="bi bi-bookmark-check me-2 text-success"></i>
+                    Today's Issued Books
                 </span>
-                <a asp-action="Requests" class="text-decoration-none" style="font-size:12px;">View all →</a>
+                <a asp-action="IssuedBooks" class="text-decoration-none" style="font-size:12px;">
+                    View all →
+                </a>
             </div>
             <div class="card-body p-0">
-                @if (!Model.PendingRequests.Any())
+                @if (!Model.TodayIssuedBooks.Any())
                 {
                     <div class="text-center py-5 text-muted">
-                        <i class="bi bi-check-circle text-success fs-3 d-block mb-2"></i>
-                        <span style="font-size:13px;">No pending requests!</span>
+                        <i class="bi bi-bookmark text-muted fs-3 d-block mb-2"
+                           style="opacity:.3;"></i>
+                        <span style="font-size:13px;">No books issued today.</span>
                     </div>
                 }
                 else
                 {
                     <ul class="list-group list-group-flush">
-                        @foreach (var r in Model.PendingRequests)
+                        @foreach (var ib in Model.TodayIssuedBooks)
                         {
                             <li class="list-group-item px-4 py-3">
-                                <div class="d-flex align-items-start justify-content-between gap-2">
+                                <div class="d-flex align-items-start
+                                                    justify-content-between gap-2">
                                     <div>
-                                        <div class="fw-medium" style="font-size:13px;">@r.MemberName</div>
+                                        <div class="fw-medium" style="font-size:13px;">
+                                            @ib.MemberName
+                                        </div>
                                         <div class="text-muted" style="font-size:12px;">
-                                            <i class="bi bi-book me-1"></i>@r.BookTitle
-                                            <span class="ms-2 badge bg-light text-dark border" style="font-size:11px;font-family:monospace;">@r.BookNumber</span>
+                                            <i class="bi bi-book me-1"></i>@ib.BookTitle
+                                            <span class="ms-2 badge bg-light text-dark border"
+                                                  style="font-size:10px;font-family:monospace;">
+                                                @ib.BookNumber
+                                            </span>
                                         </div>
                                         <div class="text-muted" style="font-size:11px;">
-                                            <i class="bi bi-geo-alt me-1"></i>@r.ShelfLocation
-                                            &nbsp;|&nbsp;
-                                            <i class="bi bi-diagram-3 me-1"></i>@r.WingName — @r.SectionName
+                                            <i class="bi bi-credit-card me-1"></i>@ib.CNIC
                                         </div>
-                                        <div class="text-muted" style="font-size:11px;">@r.RequestDate.ToString("dd MMM yyyy — hh:mm tt")</div>
                                     </div>
-                                    <a asp-controller="Librarian" asp-action="Requests"
-                                       class="btn btn-sm btn-warning text-dark flex-shrink-0">
-                                        <i class="bi bi-arrow-right me-1"></i>Handle
-                                    </a>
+                                    <div class="text-end flex-shrink-0">
+                                        <div class="badge bg-success-subtle text-success"
+                                             style="font-size:11px;">
+                                            Issued Today
+                                        </div>
+                                        <div class="text-muted mt-1" style="font-size:11px;">
+                                            Due: @ib.DueDate.ToString("dd MMM yyyy")
+                                        </div>
+                                    </div>
                                 </div>
                             </li>
                         }
@@ -98,6 +108,10 @@
             </div>
         </div>
     </div>
+
+    
+
+</div>
 
     <div class="col-md-5">
         <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">

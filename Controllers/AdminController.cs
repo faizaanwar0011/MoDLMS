@@ -413,5 +413,112 @@ namespace MoDLibrary.Controllers
             var id = _db.GenerateBookId(categoryId);
             return Json(new { bookId = id });
         }
+
+        // ── REPORTS ───────────────────────────────────────────────────
+
+        [HttpGet]
+        public IActionResult Reports()
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            var vm = new ReportViewModel
+            {
+                StartDate = DateTime.Now.AddMonths(-1),
+                EndDate = DateTime.Now,
+                Summary = _db.GetReportSummary(
+                                DateTime.Now.AddMonths(-1), DateTime.Now),
+                IssuedBooks = _db.GetIssuedBooksReport(
+                                DateTime.Now.AddMonths(-1), DateTime.Now, "All")
+            };
+            return View(vm);
+        }
+
+        [HttpPost]
+        public IActionResult Reports(ReportViewModel model)
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            model.Summary = _db.GetReportSummary(model.StartDate, model.EndDate);
+
+            switch (model.ReportType)
+            {
+                case "Issued":
+                    model.IssuedBooks = _db.GetIssuedBooksReport(
+                        model.StartDate, model.EndDate, model.StatusFilter);
+                    break;
+                case "Fines":
+                    model.Fines = _db.GetFinesReport(
+                        model.StartDate, model.EndDate, model.StatusFilter);
+                    break;
+                case "Daily":
+                    model.DailyActivity = _db.GetDailyActivityReport(model.StartDate);
+                    break;
+            }
+            return View(model);
+        }
+        // ── MEMBERS MANAGEMENT ────────────────────────────────────────
+
+        public IActionResult Members()
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            return View(_db.GetAllMembers());
+        }
+
+        [HttpGet]
+        public IActionResult AddMember()
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            return View(new AddMemberViewModel());
+        }
+
+        [HttpPost]
+        public IActionResult AddMember(AddMemberViewModel model)
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            try
+            {
+                _db.AddMember(model.FullName, model.Username, model.Password);
+                TempData["Success"] = "Member account created successfully.";
+            }
+            catch
+            {
+                TempData["Error"] = "Username already exists. Try a different one.";
+            }
+            return RedirectToAction("Members");
+        }
+
+        [HttpGet]
+        public IActionResult EditMember(int id)
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            var member = _db.GetAllMembers().FirstOrDefault(m => m.MemberId == id);
+            if (member == null) return NotFound();
+            return View(member);
+        }
+
+        [HttpPost]
+        public IActionResult EditMember(Member model)
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            _db.UpdateMember(model.MemberId, model.FullName, model.Username, model.IsActive);
+            TempData["Success"] = "Member updated successfully.";
+            return RedirectToAction("Members");
+        }
+
+        [HttpPost]
+        public IActionResult ResetMemberPassword(int memberId, string newPassword)
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            _db.ResetMemberPassword(memberId, newPassword);
+            TempData["Success"] = "Password reset successfully.";
+            return RedirectToAction("Members");
+        }
+
+        [HttpPost]
+        public IActionResult DeleteMember(int id)
+        {
+            var check = RequireAdmin(); if (check != null) return check;
+            _db.DeleteMember(id);
+            TempData["Success"] = "Member deactivated.";
+            return RedirectToAction("Members");
+        }
     }
 }

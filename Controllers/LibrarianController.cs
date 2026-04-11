@@ -14,7 +14,7 @@ namespace MoDLibrary.Controllers
 
         public LibrarianController(IConfiguration config, IHubContext<NotificationHub> hub)
         {
-            _db  = new DatabaseHelper(config);
+            _db = new DatabaseHelper(config);
             _hub = hub;
         }
 
@@ -40,8 +40,8 @@ namespace MoDLibrary.Controllers
             var vm = new LibrarianDashboardViewModel
             {
                 Stats = _db.GetDashboardStats(),
-                PendingRequests = _db.GetPendingRequestsOnly(),
-                OverdueBooks = _db.GetOverdueBooks()
+                OverdueBooks = _db.GetOverdueBooks(),
+                TodayIssuedBooks = _db.GetTodayIssuedBooks()
             };
             return View(vm);
         }
@@ -248,8 +248,8 @@ namespace MoDLibrary.Controllers
             await _hub.Clients.Group("Members").SendAsync("ReceiveRemark", new
             {
                 requestId = model.RequestId,
-                status    = model.Status,
-                remark    = model.Remark
+                status = model.Status,
+                remark = model.Remark
             });
 
             TempData["Success"] = "Remark sent successfully.";
@@ -407,7 +407,7 @@ namespace MoDLibrary.Controllers
         {
             var check = RequireLibrarian(); if (check != null) return check;
             ViewBag.Wings = _db.GetWings();
-          //  ViewBag.Wings.Sections=_db.GetSectionsByWingId();
+            //  ViewBag.Wings.Sections=_db.GetSectionsByWingId();
             ViewBag.Books = _db.GetAllBooks().Where(b => b.IsActive && b.AvailableCopies > 0).ToList();
             return View(new BookRequest());
         }
@@ -452,10 +452,118 @@ namespace MoDLibrary.Controllers
         [HttpGet]
         public IActionResult GetSections(int wingId)
         {
-            var sections= _db.GetSectionsByWing(wingId);
+            var sections = _db.GetSectionsByWing(wingId);
             return Json(sections);
         }
+
+
+        // ── REPORTS ───────────────────────────────────────────────────
+
+        [HttpGet]
+        public IActionResult Reports()
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            var vm = new ReportViewModel
+            {
+                StartDate = DateTime.Now.AddMonths(-1),
+                EndDate = DateTime.Now,
+                Summary = _db.GetReportSummary(
+                                DateTime.Now.AddMonths(-1), DateTime.Now),
+                IssuedBooks = _db.GetIssuedBooksReport(
+                                DateTime.Now.AddMonths(-1), DateTime.Now, "All")
+            };
+            return View(vm);
         }
+
+        [HttpPost]
+        public IActionResult Reports(ReportViewModel model)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            model.Summary = _db.GetReportSummary(model.StartDate, model.EndDate);
+
+            switch (model.ReportType)
+            {
+                case "Issued":
+                    model.IssuedBooks = _db.GetIssuedBooksReport(
+                        model.StartDate, model.EndDate, model.StatusFilter);
+                    break;
+                case "Fines":
+                    model.Fines = _db.GetFinesReport(
+                        model.StartDate, model.EndDate, model.StatusFilter);
+                    break;
+                case "Daily":
+                    model.DailyActivity = _db.GetDailyActivityReport(model.StartDate);
+                    break;
+            }
+            return View(model);
+        }
+        // ── MEMBERS MANAGEMENT ────────────────────────────────────────
+
+        public IActionResult Members()
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            return View(_db.GetAllMembers());
+        }
+
+        [HttpGet]
+        public IActionResult AddMember()
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            return View(new AddMemberViewModel());
+        }
+
+        [HttpPost]
+        public IActionResult AddMember(AddMemberViewModel model)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            try
+            {
+                _db.AddMember(model.FullName, model.Username, model.Password);
+                TempData["Success"] = "Member account created successfully.";
+            }
+            catch
+            {
+                TempData["Error"] = "Username already exists. Try a different one.";
+            }
+            return RedirectToAction("Members");
+        }
+
+        [HttpGet]
+        public IActionResult EditMember(int id)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            var member = _db.GetAllMembers().FirstOrDefault(m => m.MemberId == id);
+            if (member == null) return NotFound();
+            return View(member);
+        }
+
+        [HttpPost]
+        public IActionResult EditMember(Member model)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            _db.UpdateMember(model.MemberId, model.FullName, model.Username, model.IsActive);
+            TempData["Success"] = "Member updated successfully.";
+            return RedirectToAction("Members");
+        }
+
+        [HttpPost]
+        public IActionResult ResetMemberPassword(int memberId, string newPassword)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            _db.ResetMemberPassword(memberId, newPassword);
+            TempData["Success"] = "Password reset successfully.";
+            return RedirectToAction("Members");
+        }
+
+        [HttpPost]
+        public IActionResult DeleteMember(int id)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            _db.DeleteMember(id);
+            TempData["Success"] = "Member deactivated.";
+            return RedirectToAction("Members");
+        }
+    }
     }
 //75734-7457567-5 
 //86785-5758684-8

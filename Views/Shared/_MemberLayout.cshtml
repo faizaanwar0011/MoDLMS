@@ -43,46 +43,61 @@
                 <span class="text-secondary" style="font-size:11px;">| Ministry of Defence</span>
             </a>
 
-            <!-- Nav Links -->
             <div class="d-flex align-items-center gap-2 flex-wrap">
+
                 <a asp-controller="Member" asp-action="Index"
                    class="btn btn-sm @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "btn-warning text-dark" : "btn-outline-light")">
                     <i class="bi bi-journals me-1"></i>Catalog
                 </a>
+
+                @{
+                    var sessionUser = Context.Session.GetString("User");
+                    var isLoggedIn = sessionUser != null;
+                }
+
                 <a asp-controller="Member" asp-action="EBooks"
-                   class="btn btn-sm @(ViewContext.RouteData.Values["action"]?.ToString() == "EBooks" ? "btn-warning text-dark" : "btn-outline-light")">
+                   class="btn btn-sm @(ViewContext.RouteData.Values["action"]?.ToString()=="EBooks"?"btn-warning text-dark":"btn-outline-light")">
                     <i class="bi bi-file-earmark-pdf me-1"></i>E-Books
+                    @if (!isLoggedIn)
+                    {
+                        <i class="bi bi-lock-fill ms-1" style="font-size:10px;"></i>
+                    }
                 </a>
+
                 <a asp-controller="Member" asp-action="Subscriptions"
-                   class="btn btn-sm @(ViewContext.RouteData.Values["action"]?.ToString() == "Subscriptions" ? "btn-warning text-dark" : "btn-outline-light")">
+                   class="btn btn-sm @(ViewContext.RouteData.Values["action"]?.ToString()=="Subscriptions"?"btn-warning text-dark":"btn-outline-light")">
                     <i class="bi bi-globe me-1"></i>Subscriptions
+                    @if (!isLoggedIn)
+                    {
+                        <i class="bi bi-lock-fill ms-1" style="font-size:10px;"></i>
+                    }
                 </a>
+
                 <a asp-controller="Member" asp-action="SuggestBook"
                    class="btn btn-sm btn-outline-light">
                     <i class="bi bi-lightbulb me-1"></i>Suggest
                 </a>
+
                 <a asp-controller="Member" asp-action="MySuggestions"
                    class="btn btn-sm btn-outline-light">
                     <i class="bi bi-list-check me-1"></i>My Suggestions
                 </a>
 
-                @{
-                    var user = Context.Session.GetString("User");
-                    if (user != null)
-                    {
-                        <span class="badge bg-success-subtle text-success">Member</span>
-                        <a href="/Account/Logout" class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-box-arrow-left"></i> Logout
-                        </a>
-                    }
-                    else
-                    {
-                        <a asp-controller="Account" asp-action="Login"
-                           class="btn btn-sm btn-warning text-dark fw-semibold">
-                            <i class="bi bi-person me-1"></i>Staff Login
-                        </a>
-                    }
+                @if (isLoggedIn)
+                {
+                    <span class="badge bg-success-subtle text-success">Member</span>
+                    <a href="/Account/Logout" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-box-arrow-left"></i> Logout
+                    </a>
                 }
+                else
+                {
+                    <a asp-controller="Account" asp-action="MemberLogin"
+                       class="btn btn-sm btn-warning text-dark fw-semibold">
+                        <i class="bi bi-person me-1"></i>Member Login
+                    </a>
+                }
+
             </div>
         </div>
     </nav>
@@ -102,6 +117,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
+
         @RenderBody()
     </div>
 

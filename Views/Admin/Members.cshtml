@@ -1,0 +1,276 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model List<MoDLibrary.Models.Member>
+@{
+    ViewData["Title"] = "Manage Members";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    // Librarian: Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h5 class="fw-semibold mb-0">Manage Members</h5>
+        <small class="text-muted">
+            @Model.Count(m => m.IsActive) active members
+        </small>
+    </div>
+    <button class="btn btn-primary"
+            data-bs-toggle="modal" data-bs-target="#addMemberModal">
+        <i class="bi bi-person-plus me-2"></i>Add Member
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm" style="border-radius:12px;">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead style="background:#f8f9fa;">
+                    <tr>
+                        <th class="px-4 py-3"
+                            style="font-size:11px;text-transform:uppercase;
+                                   letter-spacing:.5px;color:#6c757d;">Member</th>
+                        <th style="font-size:11px;text-transform:uppercase;
+                                   letter-spacing:.5px;color:#6c757d;">Username</th>
+                        <th style="font-size:11px;text-transform:uppercase;
+                                   letter-spacing:.5px;color:#6c757d;">Status</th>
+                        <th style="font-size:11px;text-transform:uppercase;
+                                   letter-spacing:.5px;color:#6c757d;">Created</th>
+                        <th style="font-size:11px;text-transform:uppercase;
+                                   letter-spacing:.5px;color:#6c757d;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                No members found. Add one to get started.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var m in Model)
+                    {
+                        <tr class="@(!m.IsActive ? "opacity-50" : "")">
+                            <td class="px-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center
+                                                justify-content-center"
+                                         style="width:36px;height:36px;background:#e7f1ff;
+                                                font-size:13px;font-weight:600;color:#0d6efd;">
+                                        @m.FullName.Substring(0,1).ToUpper()
+                                    </div>
+                                    <div class="fw-medium" style="font-size:14px;">
+                                        @m.FullName
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="font-size:13px;font-family:monospace;">
+                                @m.Username
+                            </td>
+                            <td>
+                                @if (m.IsActive)
+                                {
+                                    <span class="badge bg-success-subtle text-success">
+                                        Active
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary">
+                                        Deactivated
+                                    </span>
+                                }
+                            </td>
+                            <td style="font-size:12px;color:#6c757d;">
+                                @m.CreatedAt.ToString("dd MMM yyyy")
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <!-- Edit -->
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editMemberModal"
+                                            onclick="setEditModal(@m.MemberId,
+                                                     '@m.FullName',
+                                                     '@m.Username',
+                                                     @(m.IsActive ? "true" : "false"))">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <!-- Reset Password -->
+                                    <button class="btn btn-sm btn-outline-warning"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#resetPasswordModal"
+                                            onclick="setResetModal(@m.MemberId,
+                                                     '@m.FullName')">
+                                        <i class="bi bi-key"></i>
+                                    </button>
+                                    <!-- Deactivate -->
+                                    @if (m.IsActive)
+                                    {
+                                        <form asp-action="DeleteMember" method="post"
+                                              style="display:inline;"
+                                              onsubmit="return confirm(
+                                                'Deactivate @m.FullName?')">
+                                            <input type="hidden" name="id"
+                                                   value="@m.MemberId" />
+                                            <button class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-person-dash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal fade" id="addMemberModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-person-plus me-2 text-primary"></i>Add New Member
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AddMember" method="post">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Full Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="FullName" class="form-control"
+                               placeholder="e.g. Muhammad Ali" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Username <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="Username" class="form-control"
+                               placeholder="e.g. mali" required />
+                        <div class="form-text">Must be unique. Used for login.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Password <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" name="Password" class="form-control"
+                               placeholder="Set a password" required />
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-person-plus me-2"></i>Add Member
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Member Modal -->
+<div class="modal fade" id="editMemberModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-pencil me-2 text-primary"></i>Edit Member
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="EditMember" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="MemberId" id="editMemberId" />
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Full Name
+                        </label>
+                        <input type="text" name="FullName" id="editFullName"
+                               class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            Username
+                        </label>
+                        <input type="text" name="Username" id="editUsername"
+                               class="form-control" required />
+                    </div>
+                    <div class="form-check mt-2">
+                        <input type="checkbox" name="IsActive" id="editIsActive"
+                               class="form-check-input" value="true" />
+                        <label class="form-check-label" for="editIsActive">
+                            Account is Active
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-key me-2 text-warning"></i>Reset Password
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="ResetMemberPassword" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="memberId" id="resetMemberId" />
+                    <div class="mb-2 fw-medium" id="resetMemberName"
+                         style="font-size:14px;"></div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">
+                            New Password <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" name="newPassword" class="form-control"
+                               placeholder="Enter new password" required />
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning px-4">
+                        <i class="bi bi-key me-2"></i>Reset Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function setEditModal(id, fullName, username, isActive) {
+        document.getElementById('editMemberId').value   = id;
+        document.getElementById('editFullName').value   = fullName;
+        document.getElementById('editUsername').value   = username;
+        document.getElementById('editIsActive').checked = isActive;
+    }
+
+    function setResetModal(id, fullName) {
+        document.getElementById('resetMemberId').value      = id;
+        document.getElementById('resetMemberName').textContent =
+            'Resetting password for: ' + fullName;
+    }
+</script>
+}

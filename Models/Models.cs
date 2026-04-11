@@ -175,6 +175,8 @@ namespace MoDLibrary.Models
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = "";
         public bool IsActive { get; set; }
+        public string RackLetter { get; set; } = "";
+        public string CategoryCode { get; set; } = "";
         public DateTime CreatedAt { get; set; }
     }
     public class RecentRequest
@@ -205,8 +207,8 @@ namespace MoDLibrary.Models
     public class LibrarianDashboardViewModel
     {
         public DashboardStats Stats { get; set; } = new();
-        public List<BookRequest> PendingRequests { get; set; } = new();
         public List<OverdueBook> OverdueBooks { get; set; } = new();
+        public List<TodayIssuedBook> TodayIssuedBooks { get; set; } = new();
     }
     public class BookSuggestion
     {
@@ -335,4 +337,105 @@ namespace MoDLibrary.Models
         public bool IsActive { get; set; }
         public DateTime AddedAt { get; set; }
     }
+    public class TodayIssuedBook
+    {
+        public string MemberName { get; set; } = "";
+        public string CNIC { get; set; } = "";
+        public string ServiceNo { get; set; } = "";
+        public string BookTitle { get; set; } = "";
+        public string BookNumber { get; set; } = "";
+        public DateTime IssueDate { get; set; }
+        public DateTime DueDate { get; set; }
+    }
+    public class IssuedBookReport
+    {
+        public string MemberName { get; set; } = "";
+        public string CNIC { get; set; } = "";
+        public string ServiceNo { get; set; } = "";
+        public string WingName { get; set; } = "";
+        public string SectionName { get; set; } = "";
+        public string BookTitle { get; set; } = "";
+        public string BookNumber { get; set; } = "";
+        public DateTime IssueDate { get; set; }
+        public DateTime DueDate { get; set; }
+        public DateTime? ReturnDate { get; set; }
+        public bool IsReturned { get; set; }
+        public string BookStatus { get; set; } = "";
+        public decimal FineAmount { get; set; }
+        public bool FinePaid { get; set; }
+    }
+
+    public class FineReport
+    {
+        public string MemberName { get; set; } = "";
+        public string CNIC { get; set; } = "";
+        public string ServiceNo { get; set; } = "";
+        public string BookTitle { get; set; } = "";
+        public string BookNumber { get; set; } = "";
+        public DateTime IssueDate { get; set; }
+        public DateTime DueDate { get; set; }
+        public DateTime? ReturnDate { get; set; }
+        public decimal FineAmount { get; set; }
+        public bool IsPaid { get; set; }
+        public DateTime? PaidDate { get; set; }
+        public int DaysLate { get; set; }
+    }
+
+    public class DailyActivityReport
+    {
+        public string ActivityType { get; set; } = "";
+        public string MemberName { get; set; } = "";
+        public string BookTitle { get; set; } = "";
+        public string BookNumber { get; set; } = "";
+        public DateTime ActivityDate { get; set; }
+        public DateTime DueDate { get; set; }
+        public string CNIC { get; set; } = "";
+        public string ServiceNo { get; set; } = "";
+    }
+
+    public class ReportSummary
+    {
+        public int TotalIssued { get; set; }
+        public int TotalReturned { get; set; }
+        public int CurrentOverdue { get; set; }
+        public decimal TotalFines { get; set; }
+        public decimal CollectedFines { get; set; }
+        public decimal PendingFines { get; set; }
+    }
+
+    public class ReportViewModel
+    {
+        public string ReportType { get; set; } = "Issued";
+        public DateTime StartDate { get; set; } = DateTime.Now.AddMonths(-1);
+        public DateTime EndDate { get; set; } = DateTime.Now;
+        public string StatusFilter { get; set; } = "All";
+        public ReportSummary Summary { get; set; } = new();
+        public List<IssuedBookReport> IssuedBooks { get; set; } = new();
+        public List<FineReport> Fines { get; set; } = new();
+        public List<DailyActivityReport> DailyActivity { get; set; } = new();
+    }
+    public class Member
+    {
+        public int MemberId { get; set; }
+        public string FullName { get; set; } = "";
+        public string Username { get; set; } = "";
+        public string Password { get; set; } = "";
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class AddMemberViewModel
+    {
+        public string FullName { get; set; } = "";
+        public string Username { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+
+    public class ResetPasswordViewModel
+    {
+        public int MemberId { get; set; }
+        public string FullName { get; set; } = "";
+        public string NewPassword { get; set; } = "";
+    }
+
 }

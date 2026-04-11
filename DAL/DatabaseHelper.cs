@@ -148,6 +148,30 @@ namespace MoDLibrary.DAL
             cmd.Parameters.AddWithValue("@BookId", bookId);
             cmd.ExecuteNonQuery();
         }
+        public List<TodayIssuedBook> GetTodayIssuedBooks()
+        {
+            var list = new List<TodayIssuedBook>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetTodayIssuedBooks", conn)
+                { CommandType = CommandType.StoredProcedure };
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(new TodayIssuedBook
+                    {
+                        MemberName = r["MemberName"].ToString()!,
+                        CNIC = r["CNIC"].ToString()!,
+                        ServiceNo = r["ServiceNo"].ToString()!,
+                        BookTitle = r["BookTitle"].ToString()!,
+                        BookNumber = r["BookNumber"].ToString()!,
+                        IssueDate = (DateTime)r["IssueDate"],
+                        DueDate = (DateTime)r["DueDate"]
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("TodayIssued: " + ex.Message); }
+            return list;
+        }
 
         //private Book MapBook(SqlDataReader r) => new Book
         //{
@@ -480,17 +504,23 @@ namespace MoDLibrary.DAL
         public List<Category> GetCategories()
         {
             var list = new List<Category>();
-            using var conn = GetConnection();
-            conn.Open();
-            using var cmd = new SqlCommand("sp_GetCategories", conn)
-            { CommandType = CommandType.StoredProcedure };
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
-                list.Add(new Category
-                {
-                    CategoryId = (int)reader["CategoryId"],
-                    CategoryName = reader["CategoryName"].ToString()!
-                });
+            try
+            {
+                using var conn = GetConnection();
+                conn.Open();
+                using var cmd = new SqlCommand("sp_GetCategories", conn)
+                { CommandType = CommandType.StoredProcedure };
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                    list.Add(new Category
+                    {
+                        CategoryId = (int)reader["CategoryId"],
+                        CategoryName = reader["CategoryName"].ToString()!,
+                        RackLetter = reader["RackLetter"].ToString()!,
+                        CategoryCode = reader["CategoryCode"].ToString()!
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("Categories: " + ex.Message); }
             return list;
         }
 
@@ -1283,6 +1313,219 @@ namespace MoDLibrary.DAL
             return 0;
         }
 
-       
+        // ── REPORTS ───────────────────────────────────────────────────
+
+        public List<IssuedBookReport> GetIssuedBooksReport(
+            DateTime start, DateTime end, string status)
+        {
+            var list = new List<IssuedBookReport>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_ReportIssuedBooks", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@StartDate", start);
+                cmd.Parameters.AddWithValue("@EndDate", end.AddDays(1).AddSeconds(-1));
+                cmd.Parameters.AddWithValue("@Status", status);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(new IssuedBookReport
+                    {
+                        MemberName = r["MemberName"].ToString()!,
+                        CNIC = r["CNIC"].ToString()!,
+                        ServiceNo = r["ServiceNo"].ToString()!,
+                        WingName = r["WingName"].ToString()!,
+                        SectionName = r["SectionName"].ToString()!,
+                        BookTitle = r["BookTitle"].ToString()!,
+                        BookNumber = r["BookNumber"].ToString()!,
+                        IssueDate = (DateTime)r["IssueDate"],
+                        DueDate = (DateTime)r["DueDate"],
+                        ReturnDate = r["ReturnDate"] == DBNull.Value ? null : (DateTime?)r["ReturnDate"],
+                        IsReturned = Convert.ToBoolean(r["IsReturned"]),
+                        BookStatus = r["BookStatus"].ToString()!,
+                        FineAmount = Convert.ToDecimal(r["FineAmount"]),
+                        FinePaid = Convert.ToBoolean(r["FinePaid"])
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("IssuedReport: " + ex.Message); }
+            return list;
+        }
+
+        public List<FineReport> GetFinesReport(
+            DateTime start, DateTime end, string isPaid)
+        {
+            var list = new List<FineReport>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_ReportFines", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@StartDate", start);
+                cmd.Parameters.AddWithValue("@EndDate", end.AddDays(1).AddSeconds(-1));
+                cmd.Parameters.AddWithValue("@IsPaid", isPaid);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(new FineReport
+                    {
+                        MemberName = r["MemberName"].ToString()!,
+                        CNIC = r["CNIC"].ToString()!,
+                        ServiceNo = r["ServiceNo"].ToString()!,
+                        BookTitle = r["BookTitle"].ToString()!,
+                        BookNumber = r["BookNumber"].ToString()!,
+                        IssueDate = (DateTime)r["IssueDate"],
+                        DueDate = (DateTime)r["DueDate"],
+                        ReturnDate = r["ReturnDate"] == DBNull.Value ? null : (DateTime?)r["ReturnDate"],
+                        FineAmount = Convert.ToDecimal(r["FineAmount"]),
+                        IsPaid = Convert.ToBoolean(r["IsPaid"]),
+                        PaidDate = r["PaidDate"] == DBNull.Value ? null : (DateTime?)r["PaidDate"],
+                        DaysLate = Convert.ToInt32(r["DaysLate"])
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("FineReport: " + ex.Message); }
+            return list;
+        }
+
+        public List<DailyActivityReport> GetDailyActivityReport(DateTime date)
+        {
+            var list = new List<DailyActivityReport>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_ReportDailyActivity", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@Date", date);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(new DailyActivityReport
+                    {
+                        ActivityType = r["ActivityType"].ToString()!,
+                        MemberName = r["MemberName"].ToString()!,
+                        BookTitle = r["BookTitle"].ToString()!,
+                        BookNumber = r["BookNumber"].ToString()!,
+                        ActivityDate = (DateTime)r["ActivityDate"],
+                        DueDate = (DateTime)r["DueDate"],
+                        CNIC = r["CNIC"].ToString()!,
+                        ServiceNo = r["ServiceNo"].ToString()!
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("DailyReport: " + ex.Message); }
+            return list;
+        }
+
+        public ReportSummary GetReportSummary(DateTime start, DateTime end)
+        {
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_ReportSummary", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@StartDate", start);
+                cmd.Parameters.AddWithValue("@EndDate", end.AddDays(1).AddSeconds(-1));
+                using var r = cmd.ExecuteReader();
+                if (r.Read())
+                    return new ReportSummary
+                    {
+                        TotalIssued = Convert.ToInt32(r["TotalIssued"]),
+                        TotalReturned = Convert.ToInt32(r["TotalReturned"]),
+                        CurrentOverdue = Convert.ToInt32(r["CurrentOverdue"]),
+                        TotalFines = Convert.ToDecimal(r["TotalFines"]),
+                        CollectedFines = Convert.ToDecimal(r["CollectedFines"]),
+                        PendingFines = Convert.ToDecimal(r["PendingFines"])
+                    };
+            }
+            catch (Exception ex) { Console.WriteLine("Summary: " + ex.Message); }
+            return new ReportSummary();
+        }
+        // ── MEMBERS ───────────────────────────────────────────────────
+
+        public UserSession? MemberLogin(string username, string password)
+        {
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_MemberLogin", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@Username", username);
+                cmd.Parameters.AddWithValue("@Password", password);
+                using var r = cmd.ExecuteReader();
+                if (r.Read())
+                    return new UserSession
+                    {
+                        UserId = (int)r["MemberId"],
+                        FullName = r["FullName"].ToString()!,
+                        Username = r["Username"].ToString()!,
+                        Role = "Member"
+                    };
+            }
+            catch (Exception ex) { Console.WriteLine("MemberLogin: " + ex.Message); }
+            return null;
+        }
+
+        public List<Member> GetAllMembers()
+        {
+            var list = new List<Member>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetAllMembers", conn)
+                { CommandType = CommandType.StoredProcedure };
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(new Member
+                    {
+                        MemberId = (int)r["MemberId"],
+                        FullName = r["FullName"].ToString()!,
+                        Username = r["Username"].ToString()!,
+                        IsActive = (bool)r["IsActive"],
+                        CreatedAt = (DateTime)r["CreatedAt"]
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("GetMembers: " + ex.Message); }
+            return list;
+        }
+
+        public void AddMember(string fullName, string username, string password)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_AddMember", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@FullName", fullName);
+            cmd.Parameters.AddWithValue("@Username", username);
+            cmd.Parameters.AddWithValue("@Password", password);
+            cmd.ExecuteNonQuery();
+        }
+
+        public void UpdateMember(int id, string fullName, string username, bool isActive)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_UpdateMember", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@MemberId", id);
+            cmd.Parameters.AddWithValue("@FullName", fullName);
+            cmd.Parameters.AddWithValue("@Username", username);
+            cmd.Parameters.AddWithValue("@IsActive", isActive);
+            cmd.ExecuteNonQuery();
+        }
+
+        public void ResetMemberPassword(int id, string newPassword)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_ResetMemberPassword", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@MemberId", id);
+            cmd.Parameters.AddWithValue("@NewPassword", newPassword);
+            cmd.ExecuteNonQuery();
+        }
+
+        public void DeleteMember(int id)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_DeleteMember", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@MemberId", id);
+            cmd.ExecuteNonQuery();
+        }
+
+
     }
 }

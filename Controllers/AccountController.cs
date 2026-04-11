@@ -89,5 +89,28 @@ namespace MoDLibrary.Controllers
             var json = HttpContext.Session.GetString("User");
             return json == null ? null : JsonSerializer.Deserialize<UserSession>(json);
         }
+
+        // ── MEMBER LOGIN ──────────────────────────────────────────────
+
+        [HttpGet]
+        public IActionResult MemberLogin()
+        {
+            if (HttpContext.Session.GetString("User") != null)
+                return RedirectToAction("Index", "Member");
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult MemberLogin(string username, string password)
+        {
+            var user = _db.MemberLogin(username, password);
+            if (user == null)
+            {
+                ViewBag.Error = "Invalid username or password.";
+                return View();
+            }
+            HttpContext.Session.SetString("User", JsonSerializer.Serialize(user));
+            return RedirectToAction("EBooks", "Member");
+        }
     }
 }

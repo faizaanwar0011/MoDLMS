@@ -66,11 +66,8 @@ namespace MoDLibrary.Controllers
         public IActionResult EBooks()
         {
             var u = GetSession();
-            if (u == null)
-            {
-                TempData["Error"] = "Please login to access E-Books.";
-                return RedirectToAction("Login", "Account");
-            }
+            if (u == null || u.Role != "Member")
+                return RedirectToAction("MemberLogin", "Account");
             ViewBag.User = u;
             return View(_db.GetAllEBooks());
         }
@@ -78,15 +75,11 @@ namespace MoDLibrary.Controllers
         public IActionResult Subscriptions()
         {
             var u = GetSession();
-            if (u == null)
-            {
-                TempData["Error"] = "Please login to access Subscriptions.";
-                return RedirectToAction("Login", "Account");
-            }
+            if (u == null || u.Role != "Member")
+                return RedirectToAction("MemberLogin", "Account");
             ViewBag.User = u;
             return View(_db.GetSubscriptions());
         }
-
         // ── RATE BOOK ─────────────────────────────────────────────
         [HttpGet]
         public IActionResult RateBook(int bookId)
