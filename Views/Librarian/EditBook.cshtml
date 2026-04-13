@@ -5,7 +5,9 @@
 }
 
 <div class="d-flex align-items-center mb-4">
-    <a asp-action="Books" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <a asp-action="Books" class="btn btn-sm btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left"></i>
+    </a>
     <div>
         <h5 class="fw-semibold mb-0">Edit Book</h5>
         <small class="text-muted">@Model.BookNumber — @Model.Title</small>
@@ -16,58 +18,228 @@
     <div class="col-md-8">
         <div class="card border-0 shadow-sm" style="border-radius:12px;">
             <div class="card-body p-4">
-                <form asp-action="EditBook" method="post">
-                    <input asp-for="BookId" type="hidden" />
+                <form asp-action="EditBook" method="post"
+                      enctype="multipart/form-data">
+                    <input asp-for="BookId"       type="hidden" />
+                    <input asp-for="ShelfLocation" type="hidden"
+                           id="shelfLocationField"
+                           value="@Model.ShelfLocation" />
+
                     <div class="row g-3">
+
+                        <!-- Title -->
                         <div class="col-md-8">
-                            <label class="form-label fw-medium" style="font-size:13px;">Book Title <span class="text-danger">*</span></label>
+                            <label class="form-label fw-medium"
+                                   style="font-size:13px;">
+                                Book Title <span class="text-danger">*</span>
+                            </label>
                             <input asp-for="Title" class="form-control" required />
                         </div>
+
+                        <!-- Total Copies -->
                         <div class="col-md-4">
-                            <label class="form-label fw-medium" style="font-size:13px;">Book Number</label>
-                            <input asp-for="BookNumber" class="form-control" required />
+                            <label class="form-label fw-medium"
+                                   style="font-size:13px;">
+                                Total Copies <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="TotalCopies" type="number"
+                                   min="1" class="form-control" required />
                         </div>
+
+                        <!-- Author -->
                         <div class="col-md-6">
-                            <label class="form-label fw-medium" style="font-size:13px;">Author</label>
+                            <label class="form-label fw-medium"
+                                   style="font-size:13px;">
+                                Author <span class="text-danger">*</span>
+                            </label>
                             <input asp-for="Author" class="form-control" required />
                         </div>
+
+                        <!-- Publisher -->
                         <div class="col-md-6">
-                            <label class="form-label fw-medium" style="font-size:13px;">Publisher</label>
+                            <label class="form-label fw-medium"
+                                   style="font-size:13px;">Publisher</label>
                             <input asp-for="Publisher" class="form-control" />
                         </div>
+
+                        <!-- Published Year -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium"
+                                   style="font-size:13px;">Published Year</label>
+                            <input asp-for="PublishedYear" type="number"
+                                   class="form-control" placeholder="YYYY" />
+                        </div>
+
+                        <!-- ISBN -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium"
+                                   style="font-size:13px;">ISBN</label>
+                            <input asp-for="ISBN" class="form-control" />
+                        </div>
+
+                        <!-- Book Number (readonly) -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium"
+                                   style="font-size:13px;">Book ID</label>
+                            <input asp-for="BookNumber" class="form-control"
+                                   readonly
+                                   style="background:#f0fdf4;
+                                          font-family:monospace;
+                                          font-weight:600;color:#16a34a;" />
+                        </div>
+
+                        <!-- Category -->
                         <div class="col-md-6">
-                            <label class="form-label fw-medium" style="font-size:13px;">Shelf Location</label>
-                            <input asp-for="ShelfLocation" class="form-control" required />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-medium" style="font-size:13px;">Total Copies</label>
-                            <input asp-for="TotalCopies" type="number" min="1" class="form-control" required />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-medium" style="font-size:13px;">Published Year</label>
-                            <input asp-for="PublishedYear" type="number" class="form-control" />
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-medium" style="font-size:13px;">Category</label>
-                            <select asp-for="CategoryId" class="form-select">
-                                <option value="0">— Select Category —</option>
-                                @foreach (var cat in ViewBag.Categories as List<MoDLibrary.Models.Category> ?? new())
+                            <label class="form-label fw-medium"
+                                   style="font-size:13px;">
+                                Category <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="CategoryId" class="form-select"
+                                    required
+                                    onchange="loadShelves(this.value)">
+                                <option value="">— Select Category —</option>
+                                @foreach (var cat in ViewBag.Categories
+                                    as List<MoDLibrary.Models.Category> ?? new())
                                 {
-                                    <option value="@cat.CategoryId">@cat.CategoryName</option>
+                                    <option value="@cat.CategoryId">
+                                        @cat.CategoryName
+                                    </option>
                                 }
                             </select>
                         </div>
+
+                        <!-- Shelf / Row -->
                         <div class="col-md-6">
-                            <label class="form-label fw-medium" style="font-size:13px;">ISBN</label>
-                            <input asp-for="ISBN" class="form-control" />
+                            <label class="form-label fw-medium"
+                                   style="font-size:13px;">
+                                Shelf / Row <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="ShelfId" class="form-select"
+                                    id="shelfSelect" required>
+                                <option value="">— Select Row —</option>
+                            </select>
+                            <div class="form-text">
+                                Current: <strong>@Model.ShelfLocation</strong>
+                            </div>
                         </div>
+
+                        <!-- Cover Image -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium"
+                                   style="font-size:13px;">
+                                Cover Image
+                                <span class="text-muted"
+                                      style="font-size:11px;">(optional — leave blank to keep current)</span>
+                            </label>
+                            <input type="file" name="coverImage"
+                                   class="form-control" accept="image/*" />
+                            @if (!string.IsNullOrEmpty(Model.CoverImagePath))
+                            {
+                                <div class="mt-2 d-flex align-items-center gap-2">
+                                    <img src="@Model.CoverImagePath"
+                                         style="width:40px;height:52px;
+                                                object-fit:cover;border-radius:4px;" />
+                                    <small class="text-muted">Current cover</small>
+                                </div>
+                            }
+                        </div>
+
                     </div>
+
                     <div class="d-flex gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-2"></i>Save Changes</button>
-                        <a asp-action="Books" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-2"></i>Save Changes
+                        </button>
+                        <a asp-action="Books"
+                           class="btn btn-outline-secondary px-4">Cancel</a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <!-- Info Panel -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm"
+             style="border-radius:12px;background:#f8f9fa;">
+            <div class="card-body p-4">
+                <h6 class="fw-semibold mb-3">
+                    <i class="bi bi-info-circle me-2 text-info"></i>
+                    Current Info
+                </h6>
+                <table class="table table-sm mb-0" style="font-size:13px;">
+                    <tr>
+                        <td class="text-muted">Book ID</td>
+                        <td class="fw-medium" style="font-family:monospace;">
+                            @Model.BookNumber
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Location</td>
+                        <td class="fw-medium">@Model.ShelfLocation</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Available</td>
+                        <td class="fw-medium text-success">
+                            @Model.AvailableCopies / @Model.TotalCopies
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Category</td>
+                        <td class="fw-medium">@Model.Category</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+<script>
+    // Load shelves for selected category
+    function loadShelves(categoryId) {
+        if (!categoryId) return;
+        const sel = document.getElementById('shelfSelect');
+        sel.disabled = true;
+        sel.innerHTML = '<option value="">Loading…</option>';
+
+        fetch('/Librarian/GetShelvesByCategory?categoryId=' + categoryId)
+            .then(r => r.json())
+            .then(shelves => {
+                sel.innerHTML = '<option value="">— Select Row —</option>';
+                shelves.forEach(s => {
+                    const o    = document.createElement('option');
+                    o.value    = s.shelfId;
+                    o.textContent = 'Rack ' + s.rackLetter +
+                                    ' — Row ' + s.rowNumber +
+                                    ' (' + s.shelfCode + ')';
+                    o.dataset.rack = s.rackLetter;
+                    o.dataset.row  = s.rowNumber;
+                    o.dataset.code = s.shelfCode;
+                    // Pre-select current shelf
+                    if (s.shelfId == '@Model.ShelfId') o.selected = true;
+                    sel.appendChild(o);
+                });
+                sel.disabled = false;
+            })
+            .catch(err => console.log('Shelves Error:', err));
+    }
+
+    // Update hidden ShelfLocation when row changes
+    document.getElementById('shelfSelect')
+        .addEventListener('change', function () {
+            const opt = this.options[this.selectedIndex];
+            if (this.value && opt.dataset.rack) {
+                document.getElementById('shelfLocationField').value =
+                    'Rack ' + opt.dataset.rack + ' - Row ' + opt.dataset.row;
+            }
+        });
+
+    // Auto load shelves on page load for current category
+    document.addEventListener('DOMContentLoaded', function () {
+        const catId = '@Model.CategoryId';
+        if (catId && catId !== '0')
+            loadShelves(catId);
+    });
+</script>
+}
