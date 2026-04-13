@@ -68,6 +68,16 @@
                                 <a asp-action="EditBook" asp-route-id="@b.BookId" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-pencil"></i>
                                 </a>
+                                @if (b.IsActive)
+                                {
+                                    <form asp-action="DeleteBook" method="post" style="display:inline;"
+                                          onsubmit="return confirm('Remove this book from catalog?')">
+                                        <input type="hidden" name="id" value="@b.BookId" />
+                                        <button class="btn btn-sm btn-outline-danger" title="Remove">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                }
                             </td>
                         </tr>
                     }
