@@ -3,6 +3,13 @@ using DinkToPdf;
 using DinkToPdf.Contracts;
 using System.Runtime.InteropServices;
 
+
+////using DinkToPdf;
+//using DinkToPdf.Contracts;
+
+//builder.Services.AddSingleton(typeof(IConverter),
+//    new SynchronizedConverter(new PdfTools()));
+
 var builder = WebApplication.CreateBuilder(args);
 
 var wkhtmltoxPath = Path.Combine(AppContext.BaseDirectory, "libwkhtmltox.dll");
