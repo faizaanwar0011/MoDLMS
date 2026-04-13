@@ -26,6 +26,7 @@
                     <tr>
                         <th class="px-4 py-3" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Book No.</th>
                         <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Title / Author</th>
+                        <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Category</th>
                         <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Shelf Location</th>
                         <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Copies</th>
                         <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Availability</th>
@@ -44,10 +45,15 @@
                                 <div class="text-muted" style="font-size:12px;">@b.Author</div>
                             </td>
                             <td>
+                                <div class="fw-medium" style="font-size:14px;">@b.Category</div>
+                                
+                            </td>
+                            <td>
                                 <span class="badge bg-info-subtle text-info">
                                     <i class="bi bi-geo-alt me-1"></i>@b.ShelfLocation
                                 </span>
                             </td>
+
                             <td style="font-size:13px;">
                                 <span class="text-success fw-medium">@b.AvailableCopies</span>
                                 <span class="text-muted"> / @b.TotalCopies</span>
