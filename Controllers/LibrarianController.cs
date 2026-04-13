@@ -742,7 +742,7 @@ namespace MoDLibrary.Controllers
                 $"MoDLibrary_{model.ReportType}_Report_{DateTime.Now:yyyy-MM-dd}.pdf");
         }
 
-        private string GenerateReportHtml(ReportViewModel model)
+       /*ivate string GenerateReportHtml(ReportViewModel model)
         {
             var sb = new System.Text.StringBuilder();
 
@@ -990,7 +990,7 @@ namespace MoDLibrary.Controllers
 
             sb.Append("</body></html>");
             return sb.ToString();
-        }
+        }*/
     }
     }
 //75734-7457567-5 

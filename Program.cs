@@ -1,28 +1,16 @@
 using MoDLibrary.Hubs;
-using DinkToPdf;
-using DinkToPdf.Contracts;
-using System.Runtime.InteropServices;
-
-
-////using DinkToPdf;
-//using DinkToPdf.Contracts;
-
-//builder.Services.AddSingleton(typeof(IConverter),
-//    new SynchronizedConverter(new PdfTools()));
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var wkhtmltoxPath = Path.Combine(AppContext.BaseDirectory, "libwkhtmltox.dll");
-if (OperatingSystem.IsWindows() && File.Exists(wkhtmltoxPath))
-{
-    NativeLibrary.Load(wkhtmltoxPath);
-}
+// ✅ REQUIRED for QuestPDF
+QuestPDF.Settings.License = LicenseType.Community;
 
-builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
-
+// Add services
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddSignalR();
+
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromHours(8);
@@ -32,6 +20,7 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
+// Error handling
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Account/Error");
@@ -40,14 +29,19 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
+
 app.UseSession();
+
 app.UseAuthorization();
 
+// Routes
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Member}/{action=Index}/{id?}");
 
+// SignalR Hub
 app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();
