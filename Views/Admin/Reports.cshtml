@@ -38,9 +38,17 @@
         <h5 class="fw-semibold mb-0">Reports</h5>
         <small class="text-muted">Generate and download library reports</small>
     </div>
-    <button class="btn btn-success" onclick="printReport()">
-        <i class="bi bi-download me-2"></i>Download PDF
-    </button>
+    <form asp-action="DownloadReport" method="post" style="display:inline;">
+        <input type="hidden" name="ReportType" value="@Model.ReportType" />
+        <input type="hidden" name="StartDate"
+               value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+        <input type="hidden" name="EndDate"
+               value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+        <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-file-earmark-pdf me-2"></i>Download PDF
+        </button>
+    </form>
 </div>
 
 <!-- Filters -->

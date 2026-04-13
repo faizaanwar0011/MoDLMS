@@ -1,8 +1,20 @@
 using MoDLibrary.Hubs;
+using DinkToPdf;
+using DinkToPdf.Contracts;
+using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var wkhtmltoxPath = Path.Combine(AppContext.BaseDirectory, "libwkhtmltox.dll");
+if (OperatingSystem.IsWindows() && File.Exists(wkhtmltoxPath))
+{
+    NativeLibrary.Load(wkhtmltoxPath);
+}
+
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+
 builder.Services.AddControllersWithViews();
+
 builder.Services.AddSignalR();
 builder.Services.AddSession(options =>
 {
