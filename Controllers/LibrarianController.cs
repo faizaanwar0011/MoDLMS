@@ -1,10 +1,13 @@
-using DinkToPdf;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using MoDLibrary.DAL;
 using MoDLibrary.Hubs;
 using MoDLibrary.Models;
 using System.Text.Json;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace MoDLibrary.Controllers
 {
@@ -568,53 +571,175 @@ namespace MoDLibrary.Controllers
         [HttpPost]
         public IActionResult DownloadReport(ReportViewModel model)
         {
-            var check = RequireLibrarian(); if (check != null) return check;
+            var check = RequireLibrarian();
+            if (check != null) return check;
 
-            // Data load karo
+            // Load data
             model.Summary = _db.GetReportSummary(model.StartDate, model.EndDate);
+
             switch (model.ReportType)
             {
                 case "Issued":
                     model.IssuedBooks = _db.GetIssuedBooksReport(
                         model.StartDate, model.EndDate, model.StatusFilter);
                     break;
+
                 case "Fines":
                     model.Fines = _db.GetFinesReport(
                         model.StartDate, model.EndDate, model.StatusFilter);
                     break;
+
                 case "Daily":
                     model.DailyActivity = _db.GetDailyActivityReport(model.StartDate);
                     break;
             }
 
-            // HTML banao
-            var html = GenerateReportHtml(model);
-
-            // PDF banao
-            var converter = HttpContext.RequestServices
-                .GetService<DinkToPdf.Contracts.IConverter>()!;
-
-            var doc = new HtmlToPdfDocument()
+            var pdf = Document.Create(container =>
             {
-                GlobalSettings = {
-            ColorMode   = ColorMode.Color,
-            Orientation = Orientation.Landscape,
-            PaperSize   = PaperKind.A4,
-            Margins     = new MarginSettings { Top = 10, Bottom = 10, Left = 10, Right = 10 }
-        },
-                Objects = {
-            new ObjectSettings {
-                HtmlContent = html,
-                WebSettings = { DefaultEncoding = "utf-8" }
-            }
-        }
-            };
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4.Landscape());
+                    page.Margin(20);
 
-            var pdf = converter.Convert(doc);
-            var fileName = $"MoDLibrary_{model.ReportType}_Report_" +
-                           $"{DateTime.Now:yyyy-MM-dd}.pdf";
+                    page.Content().Column(col =>
+                    {
+                        col.Item().Text("MoD Library Report")
+                            .FontSize(20).Bold().AlignCenter();
 
-            return File(pdf, "application/pdf", fileName);
+                        col.Item().Text(
+                            $"{model.ReportType} | {model.StartDate:dd MMM yyyy} - {model.EndDate:dd MMM yyyy}")
+                            .FontSize(11).AlignCenter();
+
+                        col.Item().PaddingVertical(10);
+
+                        // Summary
+                        col.Item().Row(row =>
+                        {
+                            void Box(string title, string value)
+                            {
+                                row.RelativeItem().Border(1).Padding(8).Column(c =>
+                                {
+                                    c.Item().Text(value).Bold().FontSize(14);
+                                    c.Item().Text(title).FontSize(9);
+                                });
+                            }
+
+                            Box("Issued", model.Summary.TotalIssued.ToString());
+                            Box("Returned", model.Summary.TotalReturned.ToString());
+                            Box("Overdue", model.Summary.CurrentOverdue.ToString());
+                            Box("Pending", $"Rs. {model.Summary.PendingFines:N0}");
+                            Box("Collected", $"Rs. {model.Summary.CollectedFines:N0}");
+                        });
+
+                        col.Item().PaddingVertical(10);
+
+                        // Issued
+                        if (model.ReportType == "Issued" && model.IssuedBooks != null)
+                        {
+                            col.Item().Text("Issued Books").Bold();
+
+                            col.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(c =>
+                                {
+                                    c.RelativeColumn();
+                                    c.RelativeColumn();
+                                    c.RelativeColumn();
+                                    c.RelativeColumn();
+                                    c.RelativeColumn();
+                                });
+
+                                table.Header(h =>
+                                {
+                                    h.Cell().Border(1).Padding(5).Text("Member").Bold();
+                                    h.Cell().Border(1).Padding(5).Text("Book").Bold();
+                                    h.Cell().Border(1).Padding(5).Text("Status").Bold();
+                                    h.Cell().Border(1).Padding(5).Text("Issue Date").Bold();
+                                    h.Cell().Border(1).Padding(5).Text("Due Date").Bold();
+                                });
+
+                                foreach (var r in model.IssuedBooks)
+                                {
+                                    table.Cell().Border(1).Padding(5).Text(r.MemberName);
+                                    table.Cell().Border(1).Padding(5).Text(r.BookTitle);
+                                    table.Cell().Border(1).Padding(5).Text(r.BookStatus);
+                                    table.Cell().Border(1).Padding(5).Text(r.IssueDate.ToString("dd MMM yyyy"));
+                                    table.Cell().Border(1).Padding(5).Text(r.DueDate.ToString("dd MMM yyyy"));
+                                }
+                            });
+                        }
+
+                        // Fines
+                        if (model.ReportType == "Fines" && model.Fines != null)
+                        {
+                            col.Item().Text("Fines Report").Bold();
+
+                            col.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(c =>
+                                {
+                                    c.RelativeColumn();
+                                    c.RelativeColumn();
+                                    c.RelativeColumn();
+                                    c.RelativeColumn();
+                                });
+
+                                table.Header(h =>
+                                {
+                                    h.Cell().Border(1).Padding(5).Text("Member").Bold();
+                                    h.Cell().Border(1).Padding(5).Text("Book").Bold();
+                                    h.Cell().Border(1).Padding(5).Text("Days Late").Bold();
+                                    h.Cell().Border(1).Padding(5).Text("Fine").Bold();
+                                });
+
+                                foreach (var f in model.Fines)
+                                {
+                                    table.Cell().Border(1).Padding(5).Text(f.MemberName);
+                                    table.Cell().Border(1).Padding(5).Text(f.BookTitle);
+                                    table.Cell().Border(1).Padding(5).Text(f.DaysLate.ToString());
+                                    table.Cell().Border(1).Padding(5).Text($"Rs. {f.FineAmount:N0}");
+                                }
+                            });
+                        }
+
+                        // Daily
+                        if (model.ReportType == "Daily" && model.DailyActivity != null)
+                        {
+                            col.Item().Text("Daily Activity").Bold();
+
+                            col.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(c =>
+                                {
+                                    c.RelativeColumn();
+                                    c.RelativeColumn();
+                                    c.RelativeColumn();
+                                });
+
+                                table.Header(h =>
+                                {
+                                    h.Cell().Border(1).Padding(5).Text("Activity").Bold();
+                                    h.Cell().Border(1).Padding(5).Text("Member").Bold();
+                                    h.Cell().Border(1).Padding(5).Text("Book").Bold();
+                                });
+
+                                foreach (var a in model.DailyActivity)
+                                {
+                                    table.Cell().Border(1).Padding(5).Text(a.ActivityType);
+                                    table.Cell().Border(1).Padding(5).Text(a.MemberName);
+                                    table.Cell().Border(1).Padding(5).Text(a.BookTitle);
+                                }
+                            });
+                        }
+
+                        col.Item().AlignCenter().Text($"Generated: {DateTime.Now:dd MMM yyyy hh:mm tt}")
+                            .FontSize(9);
+                    });
+                });
+            }).GeneratePdf();
+
+            return File(pdf, "application/pdf",
+                $"MoDLibrary_{model.ReportType}_Report_{DateTime.Now:yyyy-MM-dd}.pdf");
         }
 
         private string GenerateReportHtml(ReportViewModel model)
