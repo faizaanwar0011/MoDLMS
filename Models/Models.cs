@@ -156,6 +156,7 @@ namespace MoDLibrary.Models
         public decimal TotalFineAmount { get; set; }
         public int TotalLibrarians { get; set; }
         public int OverdueBooks { get; set; }
+        public int TodayReturned { get; set; }
     }
 
     public class ReturnResult

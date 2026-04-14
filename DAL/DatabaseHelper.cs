@@ -394,21 +394,26 @@ namespace MoDLibrary.DAL
 
         public DashboardStats GetDashboardStats()
         {
-            using var conn = GetConnection();
-            conn.Open();
-            using var cmd = new SqlCommand("sp_GetDashboardStats", conn) { CommandType = CommandType.StoredProcedure };
-            using var reader = cmd.ExecuteReader();
-            if (reader.Read())
-                return new DashboardStats
-                {
-                    TotalBooks      = (int)reader["TotalBooks"],
-                    BooksIssued     = (int)reader["BooksIssued"],
-                    PendingRequests = (int)reader["PendingRequests"],
-                    UnpaidFines     = (int)reader["UnpaidFines"],
-                    TotalFineAmount = (decimal)reader["TotalFineAmount"],
-                    TotalLibrarians = (int)reader["TotalLibrarians"],
-                    OverdueBooks    = (int)reader["OverdueBooks"]
-                };
+            try
+            {
+                using var conn = GetConnection();
+                conn.Open();
+                using var cmd = new SqlCommand("sp_GetDashboardStats", conn) { CommandType = CommandType.StoredProcedure };
+                using var reader = cmd.ExecuteReader();
+                if (reader.Read())
+                    return new DashboardStats
+                    {
+                        TotalBooks = (int)reader["TotalBooks"],
+                        BooksIssued = (int)reader["BooksIssued"],
+                        PendingRequests = (int)reader["PendingRequests"],
+                        UnpaidFines = (int)reader["UnpaidFines"],
+                        TotalFineAmount = (decimal)reader["TotalFineAmount"],
+                        TotalLibrarians = (int)reader["TotalLibrarians"],
+                        OverdueBooks = (int)reader["OverdueBooks"],
+                        TodayReturned = (int)reader["TodayReturned"]
+                    };
+            }
+            catch (Exception ex) { Console.WriteLine("Dashboard: " + ex.Message); }
             return new DashboardStats();
         }
 
