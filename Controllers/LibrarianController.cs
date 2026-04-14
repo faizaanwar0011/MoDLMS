@@ -464,6 +464,21 @@ namespace MoDLibrary.Controllers
             return Json(sections);
         }
 
+        //public IActionResult TodayReturned()
+        //  {
+        //      var check = RequireLibrarian();
+        //      if (check != null) return check;
+
+        //      var data = _db.GetTodayReturnedBooks();
+        //      return View(data);
+        //  }
+
+        public IActionResult TodayReturned()
+        {
+            var data = _db.GetTodayReturnedBooks();
+            return View(data);
+        }
+
 
         // ── REPORTS ───────────────────────────────────────────────────
 

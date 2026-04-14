@@ -425,6 +425,17 @@ namespace MoDLibrary.Models
         public DateTime CreatedAt { get; set; }
     }
 
+
+    public class TodayReturnedBook
+    {
+        public string MemberName { get; set; } = "";
+        public string CNIC { get; set; } = "";
+        public string ServiceNo { get; set; } = "";
+        public string BookTitle { get; set; } = "";
+        public string BookNumber { get; set; } = "";
+        public DateTime ReturnDate { get; set; }
+    }
+
     public class AddMemberViewModel
     {
         public string FullName { get; set; } = "";

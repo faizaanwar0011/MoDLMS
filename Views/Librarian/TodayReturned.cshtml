@@ -1,0 +1,73 @@
+﻿@model List<MoDLibrary.Models.TodayReturnedBook>
+
+@{
+    ViewData["Title"] = "Today Returned Books";
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+}
+
+<div class="card border-0 shadow-sm" style="border-radius:12px;">
+    
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <h6 class="mb-0 fw-semibold">
+            <i class="bi bi-arrow-return-left text-success me-2"></i>
+            Today Returned Books
+        </h6>
+
+        <a asp-action="Dashboard" class="btn btn-sm btn-outline-secondary">
+            ← Back
+        </a>
+    </div>
+
+    <div class="card-body p-0">
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                No books returned today.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>Member</th>
+                            <th>CNIC</th>
+                            <th>Service No</th>
+                            <th>Book</th>
+                            <th>Book No</th>
+                            <th>Return Date</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.MemberName</td>
+                                <td>@item.CNIC</td>
+                                <td>@item.ServiceNo</td>
+                                <td>@item.BookTitle</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        @item.BookNumber
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-success fw-semibold">
+                                        @item.ReturnDate.ToString("dd MMM yyyy")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+        }
+
+    </div>
+</div>

@@ -1531,6 +1531,47 @@ namespace MoDLibrary.DAL
             cmd.ExecuteNonQuery();
         }
 
+        public List<TodayReturnedBook> GetTodayReturnedBooks()
+        {
+            var list = new List<TodayReturnedBook>();
+
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                SqlCommand cmd = new SqlCommand(@"
+            SELECT 
+                br.MemberName,
+                br.CNIC,
+                br.ServiceNo,
+                b.Title AS BookTitle,
+                b.BookNumber,
+                ib.ReturnDate
+            FROM IssuedBooks ib
+            INNER JOIN BookRequests br ON br.RequestId = ib.RequestId
+            INNER JOIN Books b ON b.BookId = br.BookId
+            WHERE ib.IsReturned = 1
+              AND CAST(ib.ReturnDate AS DATE) = CAST(GETDATE() AS DATE)
+        ", con);
+
+                con.Open();
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                while (dr.Read())
+                {
+                    list.Add(new TodayReturnedBook
+                    {
+                        MemberName = dr["MemberName"].ToString(),
+                        CNIC = dr["CNIC"].ToString(),
+                        ServiceNo = dr["ServiceNo"].ToString(),
+                        BookTitle = dr["BookTitle"].ToString(),
+                        BookNumber = dr["BookNumber"].ToString(),
+                        ReturnDate = Convert.ToDateTime(dr["ReturnDate"])
+                    });
+                }
+            }
+
+            return list;
+        }
+
 
     }
 }
