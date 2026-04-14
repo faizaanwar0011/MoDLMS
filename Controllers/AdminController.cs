@@ -381,13 +381,17 @@ namespace MoDLibrary.Controllers
         }
 
         // ── MEMBER HISTORY ────────────────────────────────────────────
-        public IActionResult MemberHistory(string? cnic)
+        public IActionResult MemberHistory(string? search)
         {
-            var check = RequireAdmin(); if (check != null) return check;
-            ViewBag.CNIC = cnic ?? "";
-            if (string.IsNullOrWhiteSpace(cnic))
+            var check = RequireAdmin();
+            if (check != null) return check;
+
+            ViewBag.Name = search ?? "";
+
+            if (string.IsNullOrWhiteSpace(search))
                 return View(new List<MemberHistoryRecord>());
-            return View(_db.GetMemberHistory(cnic));
+
+            return View(_db.GetMemberHistory(search));
         }
 
         // ── RESERVATIONS ──────────────────────────────────────────────

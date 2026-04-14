@@ -30,11 +30,11 @@
                    <div style="font-size:13px;color:#e9ecef;margin-top:2px;">@(ViewBag.User?.FullName ?? "Librarian")</div>
                </div>-->
             <ul class="nav flex-column px-2 py-2 flex-grow-1">
-                <!--<li class="nav-item">
+                <li class="nav-item">
                      <a class="nav-link sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Librarian" asp-action="Dashboard">
                          <i class="bi bi-speedometer2"></i> Dashboard
                      </a>
-                 </li>-->
+                 </li>
                 <li class="nav-item">
                 <a class="nav-link sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString()=="Search"?"active":"")" asp-controller="Librarian" asp-action="Search">
                     <i class="bi bi-search"></i> Search Books
@@ -82,11 +82,11 @@
                         <i class="bi bi-megaphone"></i> Announcements
                     </a>
                 </li>
-                <li class="nav-item">
+                <!--<li class="nav-item">
                     <a class="nav-link sidebar-link" asp-controller="Librarian" asp-action="Reservations">
                         <i class="bi bi-bookmark-check"></i> Reservations
                     </a>
-                </li>
+                </li>-->
                 <li class="nav-item">
                     <a class="nav-link sidebar-link" asp-controller="Librarian" asp-action="MemberHistory">
                         <i class="bi bi-clock-history"></i> Member History

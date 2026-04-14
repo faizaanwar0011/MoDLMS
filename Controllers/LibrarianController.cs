@@ -382,13 +382,17 @@ namespace MoDLibrary.Controllers
         }
 
         // ── MEMBER HISTORY ────────────────────────────────────────────
-        public IActionResult MemberHistory(string? name)
+        public IActionResult MemberHistory(string? search)
         {
-            var check = RequireLibrarian(); if (check != null) return check;
-            ViewBag.MemberName = name ?? "";
-            if (string.IsNullOrWhiteSpace(name))
+            var check = RequireLibrarian();
+            if (check != null) return check;
+
+            ViewBag.Name = search ?? "";
+
+            if (string.IsNullOrWhiteSpace(search))
                 return View(new List<MemberHistoryRecord>());
-            return View(_db.GetMemberHistory(name));
+
+            return View(_db.GetMemberHistory(search));
         }
 
         // ── RATINGS ───────────────────────────────────────────────────
