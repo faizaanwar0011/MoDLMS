@@ -94,7 +94,7 @@ namespace MoDLibrary.DAL
             return list;
         }
 
-     /*   public Book? GetBookById(int bookId)
+     /*  public Book? GetBookById(int bookId)
         {
             using var conn = GetConnection();
             conn.Open();
@@ -173,22 +173,39 @@ namespace MoDLibrary.DAL
             return list;
         }
 
-        //private Book MapBook(SqlDataReader r) => new Book
-        //{
-        //    BookId          = (int)r["BookId"],
-        //    Title           = r["Title"].ToString()!,
-        //    Author          = r["Author"].ToString()!,
-        //    BookNumber      = r["BookNumber"].ToString()!,
-        //    ShelfLocation   = r["ShelfLocation"].ToString()!,
-        //    TotalCopies     = (int)r["TotalCopies"],
-        //    AvailableCopies = (int)r["AvailableCopies"],
-        //    Publisher       = r["Publisher"]    == DBNull.Value ? null : r["Publisher"].ToString(),
-        //    PublishedYear   = r["PublishedYear"] == DBNull.Value ? null : (int)r["PublishedYear"],
-        //    ISBN            = r["ISBN"]         == DBNull.Value ? null : r["ISBN"].ToString(),
-        //    Category        = r["Category"]     == DBNull.Value ? null : r["Category"].ToString(),
-        //    IsActive        = r.GetColumnSchema().Any(c => c.ColumnName == "IsActive") && r["IsActive"] != DBNull.Value && (bool)r["IsActive"],
-        //    Availability    = r["Availability"].ToString()!
-        //};
+        private Book MapBook(SqlDataReader r) => new Book
+        {
+            BookId = (int)r["BookId"],
+            Title = r["Title"].ToString()!,
+            Author = r["Author"].ToString()!,
+            BookNumber = r["BookNumber"].ToString()!,
+            ShelfLocation = r["ShelfLocation"].ToString()!,
+            TotalCopies = (int)r["TotalCopies"],
+            AvailableCopies = (int)r["AvailableCopies"],
+            Publisher = r["Publisher"] == DBNull.Value ? null : r["Publisher"].ToString(),
+            PublishedYear = r["PublishedYear"] == DBNull.Value ? null : (int?)r["PublishedYear"],
+            ISBN = r["ISBN"] == DBNull.Value ? null : r["ISBN"].ToString(),
+            Category = r["Category"].ToString()!,
+            CategoryCode = r["CategoryCode"].ToString()!,
+            CategoryId = Convert.ToInt32(r["CategoryId"]),
+            ShelfId = Convert.ToInt32(r["ShelfId"]),
+            ShelfCode = r["ShelfCode"].ToString()!,
+            RackLetter = r["RackLetter"].ToString()!,
+            CoverImagePath = r["CoverImagePath"] == DBNull.Value ? null : r["CoverImagePath"].ToString(),
+            IsActive = r.GetColumnSchema().Any(c => c.ColumnName == "IsActive") &&
+                       r["IsActive"] != DBNull.Value && (bool)r["IsActive"],
+            Availability = r["Availability"].ToString()!,
+            AvgRating = r.GetColumnSchema().Any(c => c.ColumnName == "AvgRating") ?
+                       Convert.ToDouble(r["AvgRating"]) : 0,
+            TotalRatings = r.GetColumnSchema().Any(c => c.ColumnName == "TotalRatings") ?
+                       Convert.ToInt32(r["TotalRatings"]) : 0,
+            // ── New fields ──────────────────────────────────────────
+            EarliestDueDate = r["EarliestDueDate"] == DBNull.Value
+                          ? null : (DateTime?)r["EarliestDueDate"],
+            DaysUntilAvailable = r["DaysUntilAvailable"] == DBNull.Value
+                          ? null : (int?)r["DaysUntilAvailable"]
+        };
+
 
         // ── BOOK REQUESTS ─────────────────────────────────────────────────────
 
@@ -1125,32 +1142,32 @@ namespace MoDLibrary.DAL
             return null;
         }
 
-        private Book MapBook(SqlDataReader r) => new Book
-        {
-            BookId = (int)r["BookId"],
-            Title = r["Title"].ToString()!,
-            Author = r["Author"].ToString()!,
-            BookNumber = r["BookNumber"].ToString()!,
-            ShelfLocation = r["ShelfLocation"].ToString()!,
-            TotalCopies = (int)r["TotalCopies"],
-            AvailableCopies = (int)r["AvailableCopies"],
-            Publisher = r["Publisher"] == DBNull.Value ? null : r["Publisher"].ToString(),
-            PublishedYear = r["PublishedYear"] == DBNull.Value ? null : (int?)r["PublishedYear"],
-            ISBN = r["ISBN"] == DBNull.Value ? null : r["ISBN"].ToString(),
-            Category = r["Category"].ToString()!,
-            CategoryCode = r["CategoryCode"].ToString()!,
-            CategoryId = Convert.ToInt32(r["CategoryId"]),
-            ShelfId = Convert.ToInt32(r["ShelfId"]),
-            ShelfCode = r["ShelfCode"].ToString()!,
-            RackLetter = r["RackLetter"].ToString()!,
-            CoverImagePath = r["CoverImagePath"] == DBNull.Value ? null : r["CoverImagePath"].ToString(),
-            IsActive = r["IsActive"] == DBNull.Value ? false : (bool)r["IsActive"],
-            Availability = r["Availability"].ToString()!,
-            AvgRating = r.GetColumnSchema().Any(c => c.ColumnName == "AvgRating") ?
-                              Convert.ToDouble(r["AvgRating"]) : 0,
-            TotalRatings = r.GetColumnSchema().Any(c => c.ColumnName == "TotalRatings") ?
-                              Convert.ToInt32(r["TotalRatings"]) : 0
-        };
+        //private Book MapBook(SqlDataReader r) => new Book
+        //{
+        //    BookId = (int)r["BookId"],
+        //    Title = r["Title"].ToString()!,
+        //    Author = r["Author"].ToString()!,
+        //    BookNumber = r["BookNumber"].ToString()!,
+        //    ShelfLocation = r["ShelfLocation"].ToString()!,
+        //    TotalCopies = (int)r["TotalCopies"],
+        //    AvailableCopies = (int)r["AvailableCopies"],
+        //    Publisher = r["Publisher"] == DBNull.Value ? null : r["Publisher"].ToString(),
+        //    PublishedYear = r["PublishedYear"] == DBNull.Value ? null : (int?)r["PublishedYear"],
+        //    ISBN = r["ISBN"] == DBNull.Value ? null : r["ISBN"].ToString(),
+        //    Category = r["Category"].ToString()!,
+        //    CategoryCode = r["CategoryCode"].ToString()!,
+        //    CategoryId = Convert.ToInt32(r["CategoryId"]),
+        //    ShelfId = Convert.ToInt32(r["ShelfId"]),
+        //    ShelfCode = r["ShelfCode"].ToString()!,
+        //    RackLetter = r["RackLetter"].ToString()!,
+        //    CoverImagePath = r["CoverImagePath"] == DBNull.Value ? null : r["CoverImagePath"].ToString(),
+        //    IsActive = r["IsActive"] == DBNull.Value ? false : (bool)r["IsActive"],
+        //    Availability = r["Availability"].ToString()!,
+        //    AvgRating = r.GetColumnSchema().Any(c => c.ColumnName == "AvgRating") ?
+        //                      Convert.ToDouble(r["AvgRating"]) : 0,
+        //    TotalRatings = r.GetColumnSchema().Any(c => c.ColumnName == "TotalRatings") ?
+        //                      Convert.ToInt32(r["TotalRatings"]) : 0
+        //};
 
         // ── EBOOKS ────────────────────────────────────────────────────
 

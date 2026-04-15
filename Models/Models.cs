@@ -51,6 +51,9 @@ namespace MoDLibrary.Models
         public string CategoryCode { get; set; } = "";
         public double AvgRating { get; set; }
         public int TotalRatings { get; set; }
+        public DateTime? EarliestDueDate { get; set; }
+        public int? DaysUntilAvailable { get; set; }
+
     }
 
     public class BookRequest
