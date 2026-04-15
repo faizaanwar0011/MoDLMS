@@ -47,10 +47,28 @@
                 }
                 else
                 {
-                    <div class="text-danger fw-bold mb-1" style="font-size:18px;">
+                    <div class="text-danger fw-bold mb-1" style="font-size:16px;">
                         <i class="bi bi-x-circle-fill me-2"></i>Not Available
                     </div>
-                    <div class="text-muted" style="font-size:13px;">All copies are issued</div>
+
+                    <div class="text-muted" style="font-size:13px;">
+                        All copies are issued
+                    </div>
+
+                    @if (Model.DaysUntilAvailable.HasValue && Model.DaysUntilAvailable > 0)
+                    {
+                        <div class="alert alert-warning mt-2 mb-0 py-2" style="font-size:12px;">
+                            <i class="bi bi-clock-history me-1"></i>
+                            Available after <strong>@Model.DaysUntilAvailable days</strong>
+                        </div>
+                    }
+                    else if (Model.EarliestDueDate.HasValue)
+                    {
+                        <div class="alert alert-warning mt-2 mb-0 py-2" style="font-size:12px;">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            Expected on <strong>@Model.EarliestDueDate.Value.ToString("dd MMM yyyy")</strong>
+                        </div>
+                    }
                 }
             </div>
         </div>
