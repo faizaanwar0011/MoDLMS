@@ -423,20 +423,38 @@ namespace MoDLibrary.Controllers
         [HttpPost]
         public IActionResult IssueBookDirect(BookRequest model)
         {
-            var check = RequireLibrarian(); if (check != null) return check;
+            var check = RequireLibrarian();
+            if (check != null) return check;
+
             var result = _db.LibrarianIssueBook(model);
+
             if (result == -1)
             {
                 TempData["Error"] = "Book is not available.";
                 return RedirectToAction("IssueBookDirect");
             }
+
             if (result == -2)
             {
                 TempData["Error"] = "This member already has a book issued. Return first.";
                 return RedirectToAction("IssueBookDirect");
             }
+
+            if (result == -3)
+            {
+                TempData["Error"] = "Service Number must be exactly 8 digits (numbers only).";
+                return RedirectToAction("IssueBookDirect");
+            }
+
+            if (result == -99)
+            {
+                TempData["Error"] = "System error occurred. Please try again.";
+                return RedirectToAction("IssueBookDirect");
+            }
+
             TempData["Success"] = "Book issued successfully! Due date: " +
                 DateTime.Now.AddDays(15).ToString("dd MMM yyyy");
+
             return RedirectToAction("IssuedBooks");
         }
         public IActionResult Books()
@@ -761,255 +779,7 @@ namespace MoDLibrary.Controllers
                 $"MoDLibrary_{model.ReportType}_Report_{DateTime.Now:yyyy-MM-dd}.pdf");
         }
 
-       /*ivate string GenerateReportHtml(ReportViewModel model)
-        {
-            var sb = new System.Text.StringBuilder();
-
-            sb.Append(@"
-    <html>
-    <head>
-    <style>
-        body { font-family: Arial, sans-serif; font-size: 11px; color: #333; }
-        h2 { text-align: center; color: #0a1628; margin-bottom: 4px; }
-        h3 { text-align: center; color: #555; margin-bottom: 4px; font-weight: normal; }
-        p  { text-align: center; color: #777; font-size: 10px; margin-bottom: 16px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #0a1628; color: white; padding: 7px 8px;
-             text-align: left; font-size: 10px; }
-        td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; }
-        tr:nth-child(even) { background: #f8fafc; }
-        .badge-active   { color: #16a34a; font-weight: bold; }
-        .badge-overdue  { color: #dc2626; font-weight: bold; }
-        .badge-returned { color: #6c757d; font-weight: bold; }
-        .badge-issued   { color: #0d6efd; font-weight: bold; }
-        .summary-box {
-            display: inline-block; background: #f8fafc;
-            border: 1px solid #e2e8f0; border-radius: 6px;
-            padding: 8px 16px; margin: 4px; text-align: center;
-        }
-        .summary-box .num  { font-size: 18px; font-weight: bold; color: #0a1628; }
-        .summary-box .lbl  { font-size: 9px; color: #6c757d; text-transform: uppercase; }
-        .summary-wrap { text-align: center; margin-bottom: 16px; }
-        tfoot td { font-weight: bold; background: #f1f5f9; }
-        .header-line { border-top: 3px solid #c9a84c; margin: 8px 0; }
-    </style>
-    </head>
-    <body>
-    ");
-
-            // Header
-            sb.Append($@"
-        <h2>Ministry of Defence — MoDLibrary</h2>
-        <h3>{(model.ReportType == "Issued" ? "Issued Books Report" :
-                      model.ReportType == "Fines" ? "Fines Report" :
-                      "Daily Activity Report")}</h3>
-        <p>
-            Period: {model.StartDate:dd MMM yyyy} — {model.EndDate:dd MMM yyyy}
-            &nbsp;|&nbsp; Generated: {DateTime.Now:dd MMM yyyy hh:mm tt}
-        </p>
-        <div class='header-line'></div>
-    ");
-
-            // Summary
-            sb.Append($@"
-        <div class='summary-wrap'>
-            <div class='summary-box'>
-                <div class='num'>{model.Summary.TotalIssued}</div>
-                <div class='lbl'>Total Issued</div>
-            </div>
-            <div class='summary-box'>
-                <div class='num'>{model.Summary.TotalReturned}</div>
-                <div class='lbl'>Returned</div>
-            </div>
-            <div class='summary-box'>
-                <div class='num' style='color:#dc2626;'>
-                    {model.Summary.CurrentOverdue}
-                </div>
-                <div class='lbl'>Overdue</div>
-            </div>
-            <div class='summary-box'>
-                <div class='num' style='color:#dc2626;'>
-                    Rs. {model.Summary.PendingFines:N0}
-                </div>
-                <div class='lbl'>Pending Fines</div>
-            </div>
-            <div class='summary-box'>
-                <div class='num' style='color:#16a34a;'>
-                    Rs. {model.Summary.CollectedFines:N0}
-                </div>
-                <div class='lbl'>Collected Fines</div>
-            </div>
-        </div>
-    ");
-
-            // Issued Books Table
-            if (model.ReportType == "Issued" && model.IssuedBooks.Any())
-            {
-                sb.Append(@"
-        <table>
-            <thead>
-                <tr>
-                    <th>Member Name</th>
-                    <th>CNIC</th>
-                    <th>Service No</th>
-                    <th>Wing</th>
-                    <th>Section</th>
-                    <th>Book Title</th>
-                    <th>Book No</th>
-                    <th>Issue Date</th>
-                    <th>Due Date</th>
-                    <th>Return Date</th>
-                    <th>Status</th>
-                    <th>Fine</th>
-                </tr>
-            </thead>
-            <tbody>
-        ");
-
-                foreach (var r in model.IssuedBooks)
-                {
-                    var statusClass = r.BookStatus == "Active" ? "badge-active" :
-                                      r.BookStatus == "Overdue" ? "badge-overdue" :
-                                                                   "badge-returned";
-                    sb.Append($@"
-            <tr>
-                <td>{r.MemberName}</td>
-                <td>{r.CNIC}</td>
-                <td>{r.ServiceNo}</td>
-                <td>{r.WingName}</td>
-                <td>{r.SectionName}</td>
-                <td>{r.BookTitle}</td>
-                <td>{r.BookNumber}</td>
-                <td>{r.IssueDate:dd MMM yyyy}</td>
-                <td>{r.DueDate:dd MMM yyyy}</td>
-                <td>{(r.ReturnDate.HasValue ? r.ReturnDate.Value.ToString("dd MMM yyyy") : "—")}</td>
-                <td class='{statusClass}'>{r.BookStatus}</td>
-                <td>{(r.FineAmount > 0 ? $"Rs. {r.FineAmount:N0}" : "—")}</td>
-            </tr>
-            ");
-                }
-
-                sb.Append($@"
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan='11' style='text-align:right;'>Total Fines:</td>
-                    <td style='color:#dc2626;'>
-                        Rs. {model.IssuedBooks.Sum(x => x.FineAmount):N0}
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-        ");
-            }
-
-            // Fines Table
-            if (model.ReportType == "Fines" && model.Fines.Any())
-            {
-                sb.Append(@"
-        <table>
-            <thead>
-                <tr>
-                    <th>Member Name</th>
-                    <th>CNIC</th>
-                    <th>Service No</th>
-                    <th>Book Title</th>
-                    <th>Book No</th>
-                    <th>Issue Date</th>
-                    <th>Due Date</th>
-                    <th>Return Date</th>
-                    <th>Days Late</th>
-                    <th>Fine Amount</th>
-                    <th>Status</th>
-                    <th>Paid Date</th>
-                </tr>
-            </thead>
-            <tbody>
-        ");
-
-                foreach (var f in model.Fines)
-                {
-                    sb.Append($@"
-            <tr>
-                <td>{f.MemberName}</td>
-                <td>{f.CNIC}</td>
-                <td>{f.ServiceNo}</td>
-                <td>{f.BookTitle}</td>
-                <td>{f.BookNumber}</td>
-                <td>{f.IssueDate:dd MMM yyyy}</td>
-                <td style='color:#dc2626;'>{f.DueDate:dd MMM yyyy}</td>
-                <td>{(f.ReturnDate.HasValue ? f.ReturnDate.Value.ToString("dd MMM yyyy") : "—")}</td>
-                <td style='color:#dc2626;font-weight:bold;'>{f.DaysLate}</td>
-                <td style='color:#dc2626;font-weight:bold;'>Rs. {f.FineAmount:N0}</td>
-                <td class='{(f.IsPaid ? "badge-active" : "badge-overdue")}'>
-                    {(f.IsPaid ? "Paid" : "Unpaid")}
-                </td>
-                <td>{(f.PaidDate.HasValue ? f.PaidDate.Value.ToString("dd MMM yyyy") : "—")}</td>
-            </tr>
-            ");
-                }
-
-                sb.Append($@"
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan='9' style='text-align:right;'>Total:</td>
-                    <td style='color:#dc2626;'>
-                        Rs. {model.Fines.Sum(f => f.FineAmount):N0}
-                    </td>
-                    <td colspan='2'></td>
-                </tr>
-            </tfoot>
-        </table>
-        ");
-            }
-
-            // Daily Activity Table
-            if (model.ReportType == "Daily" && model.DailyActivity.Any())
-            {
-                sb.Append(@"
-        <table>
-            <thead>
-                <tr>
-                    <th>Activity</th>
-                    <th>Member Name</th>
-                    <th>CNIC</th>
-                    <th>Service No</th>
-                    <th>Book Title</th>
-                    <th>Book No</th>
-                    <th>Time</th>
-                    <th>Due Date</th>
-                </tr>
-            </thead>
-            <tbody>
-        ");
-
-                foreach (var a in model.DailyActivity)
-                {
-                    var actClass = a.ActivityType == "Issued" ? "badge-issued" : "badge-active";
-                    sb.Append($@"
-            <tr>
-                <td class='{actClass}'>{a.ActivityType}</td>
-                <td>{a.MemberName}</td>
-                <td>{a.CNIC}</td>
-                <td>{a.ServiceNo}</td>
-                <td>{a.BookTitle}</td>
-                <td>{a.BookNumber}</td>
-                <td>{a.ActivityDate:hh:mm tt}</td>
-                <td>{a.DueDate:dd MMM yyyy}</td>
-            </tr>
-            ");
-                }
-
-                sb.Append(@"
-            </tbody>
-        </table>
-        ");
-            }
-
-            sb.Append("</body></html>");
-            return sb.ToString();
-        }*/
+       
     }
     }
 //75734-7457567-5 

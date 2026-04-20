@@ -306,8 +306,8 @@ namespace MoDLibrary.DAL
                     {
                         IssuedId = reader["IssuedId"] == DBNull.Value ? 0 : (int)reader["IssuedId"],
                         MemberName = reader["MemberName"] == DBNull.Value ? "" : reader["MemberName"].ToString()!,
-                        CNIC = reader["CNIC"] == DBNull.Value ? "" : reader["CNIC"].ToString()!,
-                        ServiceNo = reader["ServiceNo"] == DBNull.Value ? "" : reader["ServiceNo"].ToString()!,
+                        CNIC = reader["CNIC"] == DBNull.Value ? "" : Convert.ToString(reader["CNIC"]),
+                        ServiceNo = reader["ServiceNo"] == DBNull.Value ? "" : Convert.ToString(reader["ServiceNo"]),
                         WingName = reader["WingName"] == DBNull.Value ? "" : reader["WingName"].ToString()!,
                         SectionName = reader["SectionName"] == DBNull.Value ? "" : reader["SectionName"].ToString()!,
                         BookTitle = reader["BookTitle"] == DBNull.Value ? "" : reader["BookTitle"].ToString()!,
@@ -1316,23 +1316,40 @@ namespace MoDLibrary.DAL
         {
             try
             {
-                using var conn = GetConnection(); conn.Open();
+                using var conn = GetConnection();
+                conn.Open();
+
                 using var cmd = new SqlCommand("sp_LibrarianIssueBook", conn)
-                { CommandType = CommandType.StoredProcedure };
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
                 cmd.Parameters.AddWithValue("@MemberName", req.MemberName);
                 cmd.Parameters.AddWithValue("@CNIC", req.CNIC);
                 cmd.Parameters.AddWithValue("@ServiceNo", req.ServiceNo);
                 cmd.Parameters.AddWithValue("@WingId", req.WingId);
                 cmd.Parameters.AddWithValue("@SectionId", req.SectionId);
                 cmd.Parameters.AddWithValue("@BookId", req.BookId);
+
                 var outParam = new SqlParameter("@NewRequestId", SqlDbType.Int)
-                { Direction = ParameterDirection.Output };
+                {
+                    Direction = ParameterDirection.Output
+                };
                 cmd.Parameters.Add(outParam);
+
                 cmd.ExecuteNonQuery();
-                return (int)outParam.Value;
+
+                // 🔴 IMPORTANT: safe null handling
+                if (outParam.Value == DBNull.Value || outParam.Value == null)
+                    return 0;
+
+                return Convert.ToInt32(outParam.Value);
             }
-            catch (Exception ex) { Console.WriteLine("LibrarianIssue: " + ex.Message); }
-            return 0;
+            catch (Exception ex)
+            {
+                Console.WriteLine("LibrarianIssueBook Error: " + ex.Message);
+                return -99; // 🔴 better than silent 0 (means system error)
+            }
         }
 
         // ── REPORTS ───────────────────────────────────────────────────

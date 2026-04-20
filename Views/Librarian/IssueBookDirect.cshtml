@@ -85,7 +85,13 @@
                                 Service Number <span class="text-danger">*</span>
                             </label>
                             <input asp-for="ServiceNo" class="form-control"
-                                   placeholder="e.g. ER-111" required />
+                                   placeholder="Enter 8-digit Service Number"
+                                   maxlength="8"
+                                   pattern="\d{8}"
+                                   inputmode="numeric"
+                                   title="Only 8 digits allowed"
+                                   required />
+                    
                         </div>
                     </div>
 

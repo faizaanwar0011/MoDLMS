@@ -10,7 +10,8 @@
     <link href="~/css/site.css" rel="stylesheet" />
 </head>
 
-<body style="background:#f0f4f8;">
+<!-- ✅ FLEX FIX ADDED HERE -->
+<body class="d-flex flex-column min-vh-100" style="background:#f0f4f8;">
 
     <div id="remark-container" style="position:fixed;top:20px;right:20px;z-index:9999;width:360px;"></div>
 
@@ -99,29 +100,32 @@
         </div>
     </nav>
 
-    <!-- Main Body -->
-    <div class="container-fluid px-4 py-4">
+    <!-- ✅ MAIN WRAPPED WITH FLEX -->
+    <main class="flex-fill">
+        <div class="container-fluid px-4 py-4">
 
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show">
-                <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show">
+                    <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
 
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show">
-                <i class="bi bi-exclamation-circle me-2"></i>@TempData["Error"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="bi bi-exclamation-circle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
 
-        @RenderBody()
-    </div>
+            @RenderBody()
 
-    <!-- ✅ Footer ONLY for Catalog -->
+        </div>
+    </main>
+
+    <!-- Footer (only for Catalog) -->
     @{
         var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
@@ -129,7 +133,8 @@
 
     @if (currentAction == "Index" && currentController == "Member")
     {
-        <footer style="background:#0d1b2a; border-top:2px solid #f59e0b; padding:12px 24px; margin-top:40px;">
+        <!-- ✅ mt-auto pushes footer down -->
+        <footer class="mt-auto" style="background:#0d1b2a; border-top:2px solid #f59e0b; padding:12px 24px;">
             <div class="d-flex align-items-center justify-content-between">
 
                 <small class="text-secondary">
