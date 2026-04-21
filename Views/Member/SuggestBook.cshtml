@@ -5,7 +5,7 @@
 }
 
 <div class="d-flex align-items-center mb-4">
-    <a asp-action="Search" class="btn btn-sm btn-outline-secondary me-3">
+    <a asp-action="Index" asp-controller="Member" class="btn btn-sm btn-outline-secondary me-3">
         <i class="bi bi-arrow-left"></i>
     </a>
     <div>
@@ -46,14 +46,21 @@
                             </label>
                             <input asp-for="CNIC" class="form-control"
                                    placeholder="e.g. 42201-1234567-1"
-                                   maxlength="15" required />
-                        </div>
+                                   maxlength="15" required /> 
                         <div class="col-md-6">
                             <label class="form-label fw-medium" style="font-size:13px;">
                                 Service Number <span class="text-danger">*</span>
                             </label>
+                            <!--<input asp-for="ServiceNo" class="form-control"
+                                   placeholder="e.g. ER-111" required />-->
+
                             <input asp-for="ServiceNo" class="form-control"
-                                   placeholder="e.g. ER-111" required />
+                                   placeholder="Enter 8-digit Service Number"
+                                   maxlength="8"
+                                   pattern="\d{8}"
+                                   inputmode="numeric"
+                                   title="Only 8 digits allowed"
+                                   required />
                         </div>
                     </div>
 
@@ -97,7 +104,7 @@
                         <button type="submit" class="btn btn-warning btn-lg px-5 fw-semibold">
                             <i class="bi bi-lightbulb me-2"></i>Submit Suggestion
                         </button>
-                        <a asp-action="Search" class="btn btn-outline-secondary btn-lg px-4">
+                        <a asp-action="Index" asp-controller="Member" class="btn btn-outline-secondary btn-lg px-4">
                             Cancel
                         </a>
                     </div>

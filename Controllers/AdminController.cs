@@ -311,23 +311,23 @@ namespace MoDLibrary.Controllers
             return View(_db.GetAllCategories());
         }
 
-        [HttpPost]
-        public IActionResult AddCategory(string categoryName)
-        {
-            var check = RequireAdmin(); if (check != null) return check;
-            _db.AddCategory(categoryName);
-            TempData["Success"] = "Category added successfully.";
-            return RedirectToAction("Categories");
-        }
+        //[HttpPost]
+        //public IActionResult AddCategory(string categoryName)
+        //{
+        //    var check = RequireAdmin(); if (check != null) return check;
+        //    _db.AddCategory(categoryName);
+        //    TempData["Success"] = "Category added successfully.";
+        //    return RedirectToAction("Categories");
+        //}
 
-        [HttpPost]
-        public IActionResult UpdateCategory(int categoryId, string categoryName, bool isActive)
-        {
-            var check = RequireAdmin(); if (check != null) return check;
-            _db.UpdateCategory(categoryId, categoryName, isActive);
-            TempData["Success"] = "Category updated.";
-            return RedirectToAction("Categories");
-        }
+        //[HttpPost]
+        //public IActionResult UpdateCategory(int categoryId, string categoryName, bool isActive)
+        //{
+        //    var check = RequireAdmin(); if (check != null) return check;
+        //    _db.UpdateCategory(categoryId, categoryName, isActive);
+        //    TempData["Success"] = "Category updated.";
+        //    return RedirectToAction("Categories");
+        //}
 
         [HttpPost]
         public IActionResult DeleteCategory(int id)

@@ -1,0 +1,151 @@
+﻿@model List<MoDLibrary.Models.Category>
+@{
+    ViewData["Title"] = "Manage Categories";
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h5 class="fw-semibold mb-0">Book Categories</h5>
+        <small class="text-muted">@Model.Count(c => c.IsActive) active categories</small>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+        <i class="bi bi-plus-circle me-2"></i>Add Category
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm" style="border-radius:12px;">
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead style="background:#f8f9fa;">
+                <tr>
+                    <th class="px-4 py-3" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">#</th>
+                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Category Name</th>
+                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Status</th>
+                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Created</th>
+                    <th style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr class="@(!c.IsActive ? "opacity-50" : "")">
+                        <td class="px-4"><small class="text-muted">@c.CategoryId</small></td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-tag text-primary"></i>
+                                <span class="fw-medium" style="font-size:14px;">@c.CategoryName</span>
+                            </div>
+                        </td>
+                        <td>
+                            @if (c.IsActive)
+                            {
+                                <span class="badge bg-success-subtle text-success">Active</span>
+                            }
+                            else
+                            {
+
+                                <span class="badge bg-secondary-subtle text-secondary">Inactive</span>
+                            }
+                        </td>
+                        <td style="font-size:12px;color:#6c757d;">@c.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editCategoryModal"
+                                        onclick="setEditModal(@c.CategoryId, '@c.CategoryName', @(c.IsActive ? "true" : "false"))">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                @if (c.IsActive)
+                                {
+                                    <form asp-action="DeleteCategory" method="post" style="display:inline;"
+                                          onsubmit="return confirm('Deactivate this category?')">
+                                        <input type="hidden" name="id" value="@c.CategoryId" />
+                                        <button class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-plus-circle me-2 text-primary"></i>Add New Category
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AddCategory" method="post">
+                <div class="modal-body p-4">
+                    <label class="form-label fw-medium" style="font-size:13px;">
+                        Category Name <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" name="categoryName" class="form-control"
+                           placeholder="e.g. Islamic Books" required />
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-plus-circle me-2"></i>Add Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-semibold">
+                    <i class="bi bi-pencil me-2 text-primary"></i>Edit Category
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="UpdateCategory" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="categoryId" id="editCategoryId" />
+                    <div class="mb-3">
+                        <label class="form-label fw-medium" style="font-size:13px;">Category Name</label>
+                        <input type="text" name="categoryName" id="editCategoryName"
+                               class="form-control" required />
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="isActive" id="editIsActive"
+                               class="form-check-input" value="true" />
+                        <label class="form-check-label" for="editIsActive">Active</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function setEditModal(id, name, isActive) {
+            document.getElementById('editCategoryId').value   = id;
+            document.getElementById('editCategoryName').value = name;
+            document.getElementById('editIsActive').checked   = isActive;
+        }
+    </script>
+}
