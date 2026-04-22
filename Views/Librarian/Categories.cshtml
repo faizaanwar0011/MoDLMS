@@ -76,26 +76,82 @@
     </div>
 </div>
 
+
 <!-- Add Category Modal -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+        <div class="modal-content border-0 shadow-lg"
+             style="border-radius:16px;">
             <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-semibold">
-                    <i class="bi bi-plus-circle me-2 text-primary"></i>Add New Category
+                    <i class="bi bi-plus-circle me-2 text-primary"></i>
+                    Add New Category
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
             </div>
             <form asp-action="AddCategory" method="post">
                 <div class="modal-body p-4">
-                    <label class="form-label fw-medium" style="font-size:13px;">
-                        Category Name <span class="text-danger">*</span>
-                    </label>
-                    <input type="text" name="categoryName" class="form-control"
-                           placeholder="e.g. Islamic Books" required />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-medium"
+                               style="font-size:13px;">
+                            Category Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="categoryName"
+                               class="form-control" id="catNameInput"
+                               placeholder="e.g. Computers & IT"
+                               oninput="previewCode(this.value)"
+                               required />
+                    </div>
+
+                    <!-- Auto preview -->
+                    <div id="autoPreview"
+                         class="p-3 rounded" style="background:#f0fdf4;
+                        display:none;border:1px solid #bbf7d0;">
+                        <div style="font-size:12px;color:#6c757d;
+                            margin-bottom:6px;">
+                            Auto Generated:
+                        </div>
+                        <div class="d-flex gap-3">
+                            <div>
+                                <div style="font-size:10px;color:#6c757d;">
+                                    Category Code
+                                </div>
+                                <span class="badge bg-primary px-3 py-2"
+                                      style="font-size:14px;font-family:monospace;"
+                                      id="previewCode">—</span>
+                            </div>
+                            <div>
+                                <div style="font-size:10px;color:#6c757d;">
+                                    Rack Letter
+                                </div>
+                                <span class="badge bg-success px-3 py-2"
+                                      style="font-size:14px;"
+                                      id="previewRack">Auto</span>
+                            </div>
+                            <div>
+                                <div style="font-size:10px;color:#6c757d;">
+                                    Shelves Created
+                                </div>
+                                <span class="badge bg-info px-3 py-2"
+                                      style="font-size:14px;"
+                                      id="previewShelves">3 rows</span>
+                            </div>
+                        </div>
+                        <div class="mt-2" style="font-size:11px;color:#6c757d;">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Rack letter and 3 shelf rows will be
+                            auto-assigned by the system.
+                        </div>
+                    </div>
+
                 </div>
                 <div class="modal-footer border-top">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
                     <button type="submit" class="btn btn-primary px-4">
                         <i class="bi bi-plus-circle me-2"></i>Add Category
                     </button>
@@ -104,7 +160,6 @@
         </div>
     </div>
 </div>
-
 <!-- Edit Category Modal -->
 <div class="modal fade" id="editCategoryModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -142,10 +197,30 @@
 
 @section Scripts {
     <script>
-        function setEditModal(id, name, isActive) {
-            document.getElementById('editCategoryId').value   = id;
-            document.getElementById('editCategoryName').value = name;
-            document.getElementById('editIsActive').checked   = isActive;
+                function previewCode(name) {
+            const preview = document.getElementById('autoPreview');
+            const codeEl  = document.getElementById('previewCode');
+
+            if (!name || name.trim().length < 2) {
+                preview.style.display = 'none';
+                return;
+            }
+
+            // Remove special characters — sirf letters rakho
+            const cleanName = name.replace(/[^a-zA-Z\s]/g, '').trim();
+            const words     = cleanName.split(' ').filter(w => w.length > 0);
+
+            let code = '';
+            if (words.length >= 2) {
+                code = (words[0][0] + words[1][0]).toUpperCase();
+            } else if (words.length === 1 && words[0].length >= 2) {
+                code = words[0].substring(0, 2).toUpperCase();
+            } else {
+                code = cleanName.substring(0, 2).toUpperCase();
+            }
+
+            codeEl.textContent    = code;
+            preview.style.display = 'block';
         }
     </script>
 }

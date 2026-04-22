@@ -253,8 +253,18 @@ namespace MoDLibrary.Controllers
         public IActionResult AddCategory(string categoryName)
         {
             var check = RequireLibrarian(); if (check != null) return check;
-            _db.AddCategory(categoryName);
-            TempData["Success"] = "Category added successfully.";
+            try
+            {
+                _db.AddCategory(categoryName);
+                TempData["Success"] = "Category added — " +
+                    "Code and Rack Letter auto generated. 3 shelf rows created.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message.Contains("already exists")
+                    ? "Category already exists."
+                    : "Error adding category.";
+            }
             return RedirectToAction("Categories");
         }
 

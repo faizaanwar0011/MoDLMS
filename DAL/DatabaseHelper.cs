@@ -567,8 +567,7 @@ namespace MoDLibrary.DAL
 
         public void AddCategory(string name)
         {
-            using var conn = GetConnection();
-            conn.Open();
+            using var conn = GetConnection(); conn.Open();
             using var cmd = new SqlCommand("sp_AddCategory", conn)
             { CommandType = CommandType.StoredProcedure };
             cmd.Parameters.AddWithValue("@CategoryName", name);

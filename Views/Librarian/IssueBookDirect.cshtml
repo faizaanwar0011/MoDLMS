@@ -77,20 +77,20 @@
                                 CNIC <span class="text-danger">*</span>
                             </label>
                             <input asp-for="CNIC" class="form-control"
-                                   placeholder="e.g. 42201-1234567-1"
-                                   maxlength="15" required />
+                                   placeholder="e.g. 42201-1234567-1 (optional)"
+                                   maxlength="15" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium" style="font-size:13px;">
                                 Service Number <span class="text-danger">*</span>
                             </label>
                             <input asp-for="ServiceNo" class="form-control"
-                                   placeholder="Enter 8-digit Service Number"
+                                   placeholder="Enter 8-digit Service Number (optional)"
                                    maxlength="8"
                                    pattern="\d{8}"
                                    inputmode="numeric"
                                    title="Only 8 digits allowed"
-                                   required />
+                                   />
                     
                         </div>
                     </div>
