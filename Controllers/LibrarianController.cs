@@ -474,38 +474,41 @@ namespace MoDLibrary.Controllers
         [HttpPost]
         public IActionResult IssueBookDirect(BookRequest model)
         {
-            var check = RequireLibrarian();
-            if (check != null) return check;
+            var check = RequireLibrarian(); if (check != null) return check;
+
+            // Sirf MemberName aur BookId required hain
+            if (string.IsNullOrWhiteSpace(model.MemberName))
+            {
+                TempData["Error"] = "Member name is required.";
+                return RedirectToAction("IssueBookDirect");
+            }
+            if (model.BookId == 0)
+            {
+                TempData["Error"] = "Please select a book.";
+                return RedirectToAction("IssueBookDirect");
+            }
+
+            // Optional fields
+            if (string.IsNullOrWhiteSpace(model.CNIC))
+                model.CNIC = "—";
+            if (string.IsNullOrWhiteSpace(model.ServiceNo))
+                model.ServiceNo = "—";
+            if (model.WingId == 0) model.WingId = 1;
+            if (model.SectionId == 0) model.SectionId = 1;
 
             var result = _db.LibrarianIssueBook(model);
-
             if (result == -1)
             {
                 TempData["Error"] = "Book is not available.";
                 return RedirectToAction("IssueBookDirect");
             }
-
             if (result == -2)
             {
-                TempData["Error"] = "This member already has a book issued. Return first.";
+                TempData["Error"] = "This member already has a book issued.";
                 return RedirectToAction("IssueBookDirect");
             }
-
-            if (result == -3)
-            {
-                TempData["Error"] = "Service Number must be exactly 8 digits (numbers only).";
-                return RedirectToAction("IssueBookDirect");
-            }
-
-            if (result == -99)
-            {
-                TempData["Error"] = "System error occurred. Please try again.";
-                return RedirectToAction("IssueBookDirect");
-            }
-
             TempData["Success"] = "Book issued successfully! Due date: " +
                 DateTime.Now.AddDays(15).ToString("dd MMM yyyy");
-
             return RedirectToAction("IssuedBooks");
         }
         public IActionResult Books()

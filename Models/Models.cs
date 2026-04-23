@@ -60,8 +60,13 @@ namespace MoDLibrary.Models
     {
         public int RequestId { get; set; }
         public string MemberName { get; set; } = "";
-        public string CNIC { get; set; } = "";
-        public string ServiceNo { get; set; } = "";
+      //  public string CNIC { get; set; } = "";
+
+     ///   public string ServiceNo { get; set; } = "";
+    
+
+        public string CNIC { get; set; }
+        public string ServiceNo { get; set; }
         public int WingId { get; set; }
         public string WingName { get; set; } = "";
         public int SectionId { get; set; }
@@ -92,8 +97,10 @@ namespace MoDLibrary.Models
     {
         public int IssuedId { get; set; }
         public string MemberName { get; set; } = "";
-        public string CNIC { get; set; } = "";
-        public string ServiceNo { get; set; } = "";
+        public string CNIC { get; set; } 
+        public string ServiceNo { get; set; } 
+
+  
         public string WingName { get; set; } = "";
         public string SectionName { get; set; } = "";
         public string BookTitle { get; set; } = "";
