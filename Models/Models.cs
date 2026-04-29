@@ -20,13 +20,21 @@ namespace MoDLibrary.Models
         public string WingName { get; set; } = "";
     }
 
+    //public class Section
+    //{
+    //    public int SectionId { get; set; }
+    //    public string SectionName { get; set; } = "";
+    //    public int WingId { get; set; }
+    //}
     public class Section
     {
         public int SectionId { get; set; }
         public string SectionName { get; set; } = "";
         public int WingId { get; set; }
+        public string WingName { get; set; } = "";
+        public string IntercomNumber { get; set; } = "";
+        public bool IsActive { get; set; }
     }
-
     public class Book
     {
         public int BookId { get; set; }
@@ -99,10 +107,9 @@ namespace MoDLibrary.Models
         public string MemberName { get; set; } = "";
         public string CNIC { get; set; } 
         public string ServiceNo { get; set; } 
-
-  
         public string WingName { get; set; } = "";
         public string SectionName { get; set; } = "";
+        public string IntercomNumber { get; set; } = "";
         public string BookTitle { get; set; } = "";
         public string BookNumber { get; set; } = "";
         public DateTime IssueDate { get; set; }
@@ -458,6 +465,48 @@ namespace MoDLibrary.Models
         public int MemberId { get; set; }
         public string FullName { get; set; } = "";
         public string NewPassword { get; set; } = "";
+    }
+    public class SessionSettings
+    {
+        public int SettingId { get; set; }
+        public int MaxConcurrentUsers { get; set; }
+        public int SessionDuration { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class LibrarySession
+    {
+        public int SessionId { get; set; }
+        public string MemberName { get; set; } = "";
+        public string Username { get; set; } = "";
+        public string LibraryName { get; set; } = "";
+        public string WebsiteUrl { get; set; } = "";
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public int MinutesRemaining { get; set; }
+        public int SecondsRemaining { get; set; }
+    }
+
+    public class QueueItem
+    {
+        public int QueueId { get; set; }
+        public int QueuePosition { get; set; }
+        public string MemberName { get; set; } = "";
+        public string Username { get; set; } = "";
+        public string LibraryName { get; set; } = "";
+        public DateTime JoinedAt { get; set; }
+    }
+
+    public class SessionResult
+    {
+        public string Status { get; set; } = "";
+        public int SessionId { get; set; }
+        public DateTime EndTime { get; set; }
+        public int SecondsRemaining { get; set; }
+        public int QueuePosition { get; set; }
+        public int WaitMinutes { get; set; }
+        public string LibraryName { get; set; } = "";
+        public string WebsiteUrl { get; set; } = "";
     }
 
 }

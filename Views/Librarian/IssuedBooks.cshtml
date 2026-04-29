@@ -80,8 +80,21 @@
                                             <div class="text-muted">@ib.ServiceNo</div>
                                         </td>
                                         <td style="font-size:12px;">
-                                            <span class="badge bg-light text-dark border">@ib.WingName</span>
+                                            <span class="badge bg-light text-dark border">
+                                                @ib.WingName
+                                            </span>
                                             <div class="text-muted mt-1">@ib.SectionName</div>
+                                            @if (!string.IsNullOrEmpty(ib.IntercomNumber) &&
+                                                     ib.IntercomNumber != "—")
+                                            {
+                                                <div class="mt-1">
+                                                    <a href="tel:@ib.IntercomNumber"
+                                                           class="badge bg-success-subtle text-success"
+                                                           style="font-size:11px;text-decoration:none;">
+                                                        <i class="bi bi-telephone me-1"></i>@ib.IntercomNumber
+                                                    </a>
+                                                </div>
+                                            }
                                         </td>
                                         <td>
                                             <div class="fw-medium" style="font-size:13px;">@ib.BookTitle</div>

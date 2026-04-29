@@ -72,14 +72,14 @@ namespace MoDLibrary.Controllers
             return View(_db.GetAllEBooks());
         }
 
-        public IActionResult Subscriptions()
-        {
-            var u = GetSession();
-            if (u == null || u.Role != "Member")
-                return RedirectToAction("MemberLogin", "Account");
-            ViewBag.User = u;
-            return View(_db.GetSubscriptions());
-        }
+        //public IActionResult Subscriptions()
+        //{
+        //    var u = GetSession();
+        //    if (u == null || u.Role != "Member")
+        //        return RedirectToAction("MemberLogin", "Account");
+        //    ViewBag.User = u;
+        //    return View(_db.GetSubscriptions());
+        //}
         // ── RATE BOOK ─────────────────────────────────────────────
         [HttpGet]
         public IActionResult RateBook(int bookId)
@@ -127,6 +127,115 @@ namespace MoDLibrary.Controllers
         public IActionResult GetSections(int wingId)
         {
             return Json(_db.GetSectionsByWing(wingId));
+        }
+
+
+        // ── SUBSCRIPTIONS WITH SESSION ────────────────────────────────
+
+        public IActionResult Subscriptions()
+        {
+            var u = GetSession();
+            if (u == null || u.Role != "Member")
+                return RedirectToAction("MemberLogin", "Account");
+            ViewBag.User = u;
+            ViewBag.Settings = _db.GetSessionSettings();
+
+            // Check current session status
+            var status = _db.CheckSessionStatus(u.UserId);
+            ViewBag.SessionStatus = status;
+
+            return View(_db.GetSubscriptions());
+        }
+
+        [HttpPost]
+        public IActionResult StartSession(int subscriptionId)
+        {
+            var u = GetSession();
+            if (u == null || u.Role != "Member")
+                return RedirectToAction("MemberLogin", "Account");
+
+            var result = _db.StartSession(u.UserId, subscriptionId);
+
+            if (result.Status == "GRANTED")
+            {
+                // Store session in browser session
+                HttpContext.Session.SetInt32("SessionId", result.SessionId);
+                HttpContext.Session.SetString("SessionEnd",
+                    result.EndTime.ToString("o"));
+                return RedirectToAction("ActiveSession",
+                    new { sessionId = result.SessionId });
+            }
+            else if (result.Status == "ACTIVE")
+            {
+                return RedirectToAction("ActiveSession",
+                    new { sessionId = result.SessionId });
+            }
+            else if (result.Status == "QUEUED")
+            {
+                TempData["QueuePosition"] = result.QueuePosition;
+                TempData["WaitMinutes"] = result.WaitMinutes;
+                return RedirectToAction("QueueStatus");
+            }
+
+            TempData["Error"] = "Unable to start session. Please try again.";
+            return RedirectToAction("Subscriptions");
+        }
+
+        public IActionResult ActiveSession(int sessionId)
+        {
+            var u = GetSession();
+            if (u == null || u.Role != "Member")
+                return RedirectToAction("MemberLogin", "Account");
+
+            var status = _db.CheckSessionStatus(u.UserId);
+            if (status.Status != "ACTIVE")
+                return RedirectToAction("SessionEnded");
+
+            ViewBag.User = u;
+            ViewBag.Status = status;
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult EndSession(int sessionId)
+        {
+            _db.EndSession(sessionId);
+            HttpContext.Session.Remove("SessionId");
+            HttpContext.Session.Remove("SessionEnd");
+            return RedirectToAction("SessionEnded");
+        }
+
+        public IActionResult SessionEnded()
+        {
+            return View();
+        }
+
+        public IActionResult QueueStatus()
+        {
+            var u = GetSession();
+            if (u == null || u.Role != "Member")
+                return RedirectToAction("MemberLogin", "Account");
+
+            var status = _db.CheckSessionStatus(u.UserId);
+            ViewBag.User = u;
+            ViewBag.Status = status;
+            return View();
+        }
+
+        // AJAX — check session status
+        [HttpGet]
+        public IActionResult CheckSession()
+        {
+            var u = GetSession();
+            if (u == null) return Json(new { status = "NONE" });
+            var status = _db.CheckSessionStatus(u.UserId);
+            return Json(new
+            {
+                status = status.Status,
+                secondsRemaining = status.SecondsRemaining,
+                sessionId = status.SessionId,
+                queuePosition = status.QueuePosition
+            });
         }
     }
 }

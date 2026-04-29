@@ -51,21 +51,45 @@ namespace MoDLibrary.DAL
             return list;
         }
 
+        //public List<Section> GetSectionsByWing(int wingId)
+        //{
+        //    var list = new List<Section>();
+        //    using var conn = GetConnection();
+        //    conn.Open();
+        //    using var cmd = new SqlCommand("sp_GetSectionsByWing", conn) { CommandType = CommandType.StoredProcedure };
+        //    cmd.Parameters.AddWithValue("@WingId", wingId);
+        //    using var reader = cmd.ExecuteReader();
+        //    while (reader.Read())
+        //        list.Add(new Section
+        //        {
+        //            SectionId   = (int)reader["SectionId"],
+        //            SectionName = reader["SectionName"].ToString()!,
+        //            WingId      = wingId
+        //        });
+        //    return list;
+        //}
+
         public List<Section> GetSectionsByWing(int wingId)
         {
             var list = new List<Section>();
-            using var conn = GetConnection();
-            conn.Open();
-            using var cmd = new SqlCommand("sp_GetSectionsByWing", conn) { CommandType = CommandType.StoredProcedure };
-            cmd.Parameters.AddWithValue("@WingId", wingId);
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
-                list.Add(new Section
-                {
-                    SectionId   = (int)reader["SectionId"],
-                    SectionName = reader["SectionName"].ToString()!,
-                    WingId      = wingId
-                });
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetSectionsByWing", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@WingId", wingId);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(new Section
+                    {
+                        SectionId = (int)r["SectionId"],
+                        SectionName = r["SectionName"].ToString()!,
+                        IntercomNumber = r["IntercomNumber"] == DBNull.Value
+                                         ? "—" : r["IntercomNumber"].ToString()!,
+                        WingId = wingId
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("Sections: " + ex.Message); }
             return list;
         }
 
@@ -296,8 +320,7 @@ namespace MoDLibrary.DAL
             var list = new List<IssuedBook>();
             try
             {
-                using var conn = GetConnection();
-                conn.Open();
+                using var conn = GetConnection(); conn.Open();
                 using var cmd = new SqlCommand("sp_GetAllIssuedBooks", conn)
                 { CommandType = CommandType.StoredProcedure };
                 using var reader = cmd.ExecuteReader();
@@ -306,10 +329,11 @@ namespace MoDLibrary.DAL
                     {
                         IssuedId = reader["IssuedId"] == DBNull.Value ? 0 : (int)reader["IssuedId"],
                         MemberName = reader["MemberName"] == DBNull.Value ? "" : reader["MemberName"].ToString()!,
-                        CNIC = reader["CNIC"] == DBNull.Value ? "" : Convert.ToString(reader["CNIC"]),
-                        ServiceNo = reader["ServiceNo"] == DBNull.Value ? "" : Convert.ToString(reader["ServiceNo"]),
+                        CNIC = reader["CNIC"] == DBNull.Value ? "" : reader["CNIC"].ToString()!,
+                        ServiceNo = reader["ServiceNo"] == DBNull.Value ? "" : reader["ServiceNo"].ToString()!,
                         WingName = reader["WingName"] == DBNull.Value ? "" : reader["WingName"].ToString()!,
                         SectionName = reader["SectionName"] == DBNull.Value ? "" : reader["SectionName"].ToString()!,
+                        IntercomNumber = reader["IntercomNumber"] == DBNull.Value ? "—" : reader["IntercomNumber"].ToString()!,
                         BookTitle = reader["BookTitle"] == DBNull.Value ? "" : reader["BookTitle"].ToString()!,
                         BookNumber = reader["BookNumber"] == DBNull.Value ? "" : reader["BookNumber"].ToString()!,
                         IssueDate = reader["IssueDate"] == DBNull.Value ? DateTime.Now : (DateTime)reader["IssueDate"],
@@ -319,12 +343,83 @@ namespace MoDLibrary.DAL
                         BookStatus = reader["BookStatus"] == DBNull.Value ? "" : reader["BookStatus"].ToString()!,
                         PendingFine = reader["PendingFine"] == DBNull.Value ? 0 : Convert.ToDecimal(reader["PendingFine"])
                     });
+                Console.WriteLine($"IssuedBooks loaded: {list.Count} records");
             }
             catch (Exception ex)
             {
                 Console.WriteLine("IssuedBooks error: " + ex.Message);
             }
             return list;
+        }
+        public List<Section> GetAllSectionsWithIntercom()
+        {
+            var list = new List<Section>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetAllSectionsWithIntercom", conn)
+                { CommandType = CommandType.StoredProcedure };
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(new Section
+                    {
+                        SectionId = (int)r["SectionId"],
+                        SectionName = r["SectionName"].ToString()!,
+                        WingId = (int)r["WingId"],
+                        WingName = r["WingName"].ToString()!,
+                        IntercomNumber = r["IntercomNumber"] == DBNull.Value
+                                         ? "" : r["IntercomNumber"].ToString()!,
+                        IsActive = (bool)r["IsActive"]
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("SectionsIntercom: " + ex.Message); }
+            return list;
+        }
+
+        public void UpdateIntercomNumber(int sectionId, string intercomNumber)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_UpdateIntercomNumber", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@SectionId", sectionId);
+            cmd.Parameters.AddWithValue("@IntercomNumber", intercomNumber);
+            cmd.ExecuteNonQuery();
+        }
+
+        public int LibrarianIssueBook(BookRequest req)
+        {
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_LibrarianIssueBook", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@MemberName", req.MemberName);
+                cmd.Parameters.AddWithValue("@CNIC",
+     string.IsNullOrWhiteSpace(req.CNIC) ? (object)DBNull.Value : req.CNIC);
+                cmd.Parameters.AddWithValue("@ServiceNo",
+                    string.IsNullOrWhiteSpace(req.ServiceNo) ? (object)DBNull.Value : req.ServiceNo);
+                cmd.Parameters.AddWithValue("@WingId", req.WingId);
+                cmd.Parameters.AddWithValue("@SectionId", req.SectionId);
+                cmd.Parameters.AddWithValue("@BookId", req.BookId);
+
+                var outParam = new SqlParameter("@NewRequestId", SqlDbType.Int)
+                { Direction = ParameterDirection.Output };
+                cmd.Parameters.Add(outParam);
+                cmd.ExecuteNonQuery();
+
+                int newId = (int)outParam.Value;
+                Console.WriteLine($"LibrarianIssueBook result: {newId}");
+                Console.WriteLine($"CNIC: '{req.CNIC}' ServiceNo: '{req.ServiceNo}'");
+                Console.WriteLine($"WingId: {req.WingId} SectionId: {req.SectionId}");
+                Console.WriteLine($"BookId: {req.BookId} MemberName: {req.MemberName}");
+                return newId;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("LibrarianIssue ERROR: " + ex.Message);
+                Console.WriteLine("Stack: " + ex.StackTrace);
+                return 0;
+            }
         }
 
         // ── FINES ────────────────────────────────────────────────────────────
@@ -1086,7 +1181,179 @@ namespace MoDLibrary.DAL
             catch (Exception ex) { Console.WriteLine("GenerateBookId: " + ex.Message); }
             return "";
         }
+        // ── SESSION SETTINGS ──────────────────────────────────────────
 
+        public SessionSettings GetSessionSettings()
+        {
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetSessionSettings", conn)
+                { CommandType = CommandType.StoredProcedure };
+                using var r = cmd.ExecuteReader();
+                if (r.Read())
+                    return new SessionSettings
+                    {
+                        SettingId = (int)r["SettingId"],
+                        MaxConcurrentUsers = (int)r["MaxConcurrentUsers"],
+                        SessionDuration = (int)r["SessionDuration"],
+                        UpdatedAt = (DateTime)r["UpdatedAt"]
+                    };
+            }
+            catch (Exception ex) { Console.WriteLine("Settings: " + ex.Message); }
+            return new SessionSettings { MaxConcurrentUsers = 2, SessionDuration = 30 };
+        }
+
+        public void UpdateSessionSettings(int maxUsers, int duration)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_UpdateSessionSettings", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@MaxConcurrentUsers", maxUsers);
+            cmd.Parameters.AddWithValue("@SessionDuration", duration);
+            cmd.ExecuteNonQuery();
+        }
+
+        // ── SESSIONS ──────────────────────────────────────────────────
+
+        public SessionResult StartSession(int memberId, int subscriptionId)
+        {
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_StartLibrarySession", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@MemberId", memberId);
+                cmd.Parameters.AddWithValue("@SubscriptionId", subscriptionId);
+
+                var pResult = new SqlParameter("@Result", SqlDbType.NVarChar, 20)
+                { Direction = ParameterDirection.Output };
+                var pSessionId = new SqlParameter("@SessionId", SqlDbType.Int)
+                { Direction = ParameterDirection.Output };
+                var pQueue = new SqlParameter("@QueuePosition", SqlDbType.Int)
+                { Direction = ParameterDirection.Output };
+                var pEndTime = new SqlParameter("@EndTime", SqlDbType.DateTime)
+                { Direction = ParameterDirection.Output };
+                var pWait = new SqlParameter("@WaitMinutes", SqlDbType.Int)
+                { Direction = ParameterDirection.Output };
+
+                cmd.Parameters.Add(pResult);
+                cmd.Parameters.Add(pSessionId);
+                cmd.Parameters.Add(pQueue);
+                cmd.Parameters.Add(pEndTime);
+                cmd.Parameters.Add(pWait);
+                cmd.ExecuteNonQuery();
+
+                return new SessionResult
+                {
+                    Status = pResult.Value.ToString()!,
+                    SessionId = (int)pSessionId.Value,
+                    EndTime = (DateTime)pEndTime.Value,
+                    QueuePosition = (int)pQueue.Value,
+                    WaitMinutes = (int)pWait.Value
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("StartSession: " + ex.Message);
+                return new SessionResult { Status = "ERROR" };
+            }
+        }
+
+        public void EndSession(int sessionId)
+        {
+            using var conn = GetConnection(); conn.Open();
+            using var cmd = new SqlCommand("sp_EndLibrarySession", conn)
+            { CommandType = CommandType.StoredProcedure };
+            cmd.Parameters.AddWithValue("@SessionId", sessionId);
+            cmd.ExecuteNonQuery();
+        }
+
+        public SessionResult CheckSessionStatus(int memberId)
+        {
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_CheckSessionStatus", conn)
+                { CommandType = CommandType.StoredProcedure };
+                cmd.Parameters.AddWithValue("@MemberId", memberId);
+                using var r = cmd.ExecuteReader();
+                if (r.Read())
+                {
+                    var result = new SessionResult
+                    {
+                        Status = r["Status"].ToString()!,
+                        SessionId = Convert.ToInt32(r["SessionId"]),
+                        EndTime = (DateTime)r["EndTime"],
+                        SecondsRemaining = Convert.ToInt32(r["SecondsRemaining"]),
+                        LibraryName = r.GetColumnSchema()
+                                            .Any(c => c.ColumnName == "LibraryName") &&
+                                           r["LibraryName"] != DBNull.Value
+                                           ? r["LibraryName"].ToString()! : "",
+                        WebsiteUrl = r.GetColumnSchema()
+                                            .Any(c => c.ColumnName == "WebsiteUrl") &&
+                                           r["WebsiteUrl"] != DBNull.Value
+                                           ? r["WebsiteUrl"].ToString()! : ""
+                    };
+                    if (r.GetColumnSchema().Any(c => c.ColumnName == "QueuePosition"))
+                        result.QueuePosition = Convert.ToInt32(r["QueuePosition"]);
+                    if (r.GetColumnSchema().Any(c => c.ColumnName == "WaitMinutes"))
+                        result.WaitMinutes = Convert.ToInt32(r["WaitMinutes"]);
+                    return result;
+                }
+            }
+            catch (Exception ex) { Console.WriteLine("CheckSession: " + ex.Message); }
+            return new SessionResult { Status = "NONE" };
+        }
+
+        public List<LibrarySession> GetActiveSessions()
+        {
+            var list = new List<LibrarySession>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetActiveSessions", conn)
+                { CommandType = CommandType.StoredProcedure };
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(new LibrarySession
+                    {
+                        SessionId = (int)r["SessionId"],
+                        MemberName = r["MemberName"].ToString()!,
+                        Username = r["Username"].ToString()!,
+                        LibraryName = r["LibraryName"].ToString()!,
+                        StartTime = (DateTime)r["StartTime"],
+                        EndTime = (DateTime)r["EndTime"],
+                        MinutesRemaining = Convert.ToInt32(r["MinutesRemaining"])
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("ActiveSessions: " + ex.Message); }
+            return list;
+        }
+
+        public List<QueueItem> GetQueue()
+        {
+            var list = new List<QueueItem>();
+            try
+            {
+                using var conn = GetConnection(); conn.Open();
+                using var cmd = new SqlCommand("sp_GetQueue", conn)
+                { CommandType = CommandType.StoredProcedure };
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                    list.Add(new QueueItem
+                    {
+                        QueueId = (int)r["QueueId"],
+                        QueuePosition = (int)r["QueuePosition"],
+                        MemberName = r["MemberName"].ToString()!,
+                        Username = r["Username"].ToString()!,
+                        LibraryName = r["LibraryName"].ToString()!,
+                        JoinedAt = (DateTime)r["JoinedAt"]
+                    });
+            }
+            catch (Exception ex) { Console.WriteLine("Queue: " + ex.Message); }
+            return list;
+        }
         // ── BOOKS UPDATE ──────────────────────────────────────────────
 
         public void AddBook(Book b, string coverPath)
@@ -1311,45 +1578,45 @@ namespace MoDLibrary.DAL
 
         // ── LIBRARIAN DIRECT ISSUE ────────────────────────────────────
 
-        public int LibrarianIssueBook(BookRequest req)
-        {
-            try
-            {
-                using var conn = GetConnection();
-                conn.Open();
+        //public int LibrarianIssueBook(BookRequest req)
+        //{
+        //    try
+        //    {
+        //        using var conn = GetConnection();
+        //        conn.Open();
 
-                using var cmd = new SqlCommand("sp_LibrarianIssueBook", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
+        //        using var cmd = new SqlCommand("sp_LibrarianIssueBook", conn)
+        //        {
+        //            CommandType = CommandType.StoredProcedure
+        //        };
 
-                cmd.Parameters.AddWithValue("@MemberName", req.MemberName);
-                cmd.Parameters.AddWithValue("@CNIC", req.CNIC);
-                cmd.Parameters.AddWithValue("@ServiceNo", req.ServiceNo);
-                cmd.Parameters.AddWithValue("@WingId", req.WingId);
-                cmd.Parameters.AddWithValue("@SectionId", req.SectionId);
-                cmd.Parameters.AddWithValue("@BookId", req.BookId);
+        //        cmd.Parameters.AddWithValue("@MemberName", req.MemberName);
+        //        cmd.Parameters.AddWithValue("@CNIC", req.CNIC);
+        //        cmd.Parameters.AddWithValue("@ServiceNo", req.ServiceNo);
+        //        cmd.Parameters.AddWithValue("@WingId", req.WingId);
+        //        cmd.Parameters.AddWithValue("@SectionId", req.SectionId);
+        //        cmd.Parameters.AddWithValue("@BookId", req.BookId);
 
-                var outParam = new SqlParameter("@NewRequestId", SqlDbType.Int)
-                {
-                    Direction = ParameterDirection.Output
-                };
-                cmd.Parameters.Add(outParam);
+        //        var outParam = new SqlParameter("@NewRequestId", SqlDbType.Int)
+        //        {
+        //            Direction = ParameterDirection.Output
+        //        };
+        //        cmd.Parameters.Add(outParam);
 
-                cmd.ExecuteNonQuery();
+        //        cmd.ExecuteNonQuery();
 
-                // 🔴 IMPORTANT: safe null handling
-                if (outParam.Value == DBNull.Value || outParam.Value == null)
-                    return 0;
+        //        // 🔴 IMPORTANT: safe null handling
+        //        if (outParam.Value == DBNull.Value || outParam.Value == null)
+        //            return 0;
 
-                return Convert.ToInt32(outParam.Value);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("LibrarianIssueBook Error: " + ex.Message);
-                return -99; // 🔴 better than silent 0 (means system error)
-            }
-        }
+        //        return Convert.ToInt32(outParam.Value);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine("LibrarianIssueBook Error: " + ex.Message);
+        //        return -99; // 🔴 better than silent 0 (means system error)
+        //    }
+        //}
 
         // ── REPORTS ───────────────────────────────────────────────────
 

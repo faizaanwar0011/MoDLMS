@@ -1,0 +1,117 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@{
+    ViewData["Title"] = "Queue Status";
+    Layout = "~/Views/Shared/_MemberLayout.cshtml";
+    var status = ViewBag.Status as MoDLibrary.Models.SessionResult
+                 ?? new MoDLibrary.Models.SessionResult();
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm text-center"
+             style="border-radius:16px;">
+            <div class="card-body p-5">
+
+                @if (status.Status == "QUEUED")
+                {
+                    <div class="d-inline-flex align-items-center
+                        justify-content-center rounded-circle mb-4"
+                         style="width:80px;height:80px;background:#fef3c7;">
+                        <i class="bi bi-hourglass-split text-warning"
+                           style="font-size:36px;"></i>
+                    </div>
+
+                    <h4 class="fw-bold mb-2">You Are In Queue</h4>
+                    <p class="text-muted mb-4" style="font-size:14px;">
+                        All slots are currently occupied.
+                        You will be automatically granted access
+                        when a slot becomes available.
+                    </p>
+
+                    <!-- Queue Position -->
+                    <div class="p-4 mb-4 rounded"
+                         style="background:#f8fafc;border:2px solid #e2e8f0;">
+                        <div style="font-size:12px;color:#6c757d;
+                            text-transform:uppercase;letter-spacing:.5px;">
+                            Your Position
+                        </div>
+                        <div class="fw-bold text-warning"
+                             style="font-size:52px;line-height:1;">
+                            #@status.QueuePosition
+                        </div>
+                        <div class="text-muted" style="font-size:13px;">
+                            Estimated wait: ~@status.WaitMinutes minutes
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mb-4"
+                         style="font-size:13px;text-align:left;">
+                        <i class="bi bi-bell me-2"></i>
+                        <strong>Keep this page open.</strong>
+                        You will be automatically redirected when
+                        your turn arrives.
+                    </div>
+
+                    <a asp-action="Subscriptions"
+                           class="btn btn-outline-secondary px-4">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Back to Subscriptions
+                    </a>
+                }
+                else if (status.Status == "ACTIVE")
+                {
+                    <!-- Redirect to active session -->
+                    <script>
+                                        window.location.href =
+                                            '/Member/ActiveSession?sessionId=@status.SessionId';
+                    </script>
+                }
+                else
+                {
+                    <div class="d-inline-flex align-items-center
+                        justify-content-center rounded-circle mb-4"
+                         style="width:80px;height:80px;background:#dcfce7;">
+                        <i class="bi bi-check-circle text-success"
+                           style="font-size:36px;"></i>
+                    </div>
+                    <h4 class="fw-bold mb-2">No Active Queue</h4>
+                    <p class="text-muted mb-4">
+                        You are not in any queue right now.
+                    </p>
+                    <a asp-action="Subscriptions"
+                           class="btn btn-primary px-4">
+                        Access Libraries
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Poll every 15 seconds to check if slot available
+        @if (status.Status == "QUEUED")
+        {
+                <text>
+                    setInterval(function() {
+                        fetch('/Member/CheckSession')
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.status === 'ACTIVE') {
+                                    window.location.href =
+                                        '/Member/ActiveSession?sessionId=' +
+                                        data.sessionId;
+                                } else if (data.status === 'NONE') {
+                                    window.location.reload();
+                                }
+                            });
+                    }, 15000);
+                </text>
+        }
+    </script>
+}

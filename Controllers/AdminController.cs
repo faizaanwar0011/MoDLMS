@@ -531,6 +531,24 @@ namespace MoDLibrary.Controllers
             return RedirectToAction("Members");
         }
 
+        // ── INTERCOM ──────────────────────────────────────────────────
+        public IActionResult Intercom()
+        {
+            var check = RequireAdmin(); // Librarian: RequireLibrarian()
+            if (check != null) return check;
+            return View(_db.GetAllSectionsWithIntercom());
+        }
+
+        [HttpPost]
+        public IActionResult UpdateIntercom(int sectionId, string intercomNumber)
+        {
+            var check = RequireAdmin(); // Librarian: RequireLibrarian()
+            if (check != null) return check;
+            _db.UpdateIntercomNumber(sectionId, intercomNumber);
+            TempData["Success"] = "Intercom number updated.";
+            return RedirectToAction("Intercom");
+        }
+
         [HttpPost]
         public IActionResult DownloadReport(ReportViewModel model)
         {

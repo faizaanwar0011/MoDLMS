@@ -325,7 +325,8 @@ namespace MoDLibrary.Controllers
         public IActionResult IssuedBooks()
         {
             var check = RequireLibrarian(); if (check != null) return check;
-            return View(_db.GetAllIssuedBooks());
+            var list = _db.GetAllIssuedBooks();
+            return View(list);
         }
 
         // ── RETURN BOOK ───────────────────────────────────────────────────────
@@ -550,7 +551,23 @@ namespace MoDLibrary.Controllers
             var data = _db.GetTodayReturnedBooks();
             return View(data);
         }
+        // ── INTERCOM ──────────────────────────────────────────────────
+        public IActionResult Intercom()
+        {
+            var check = RequireLibrarian(); // Librarian: RequireLibrarian()
+            if (check != null) return check;
+            return View(_db.GetAllSectionsWithIntercom());
+        }
 
+        [HttpPost]
+        public IActionResult UpdateIntercom(int sectionId, string intercomNumber)
+        {
+            var check = RequireLibrarian(); // Librarian: RequireLibrarian()
+            if (check != null) return check;
+            _db.UpdateIntercomNumber(sectionId, intercomNumber);
+            TempData["Success"] = "Intercom number updated.";
+            return RedirectToAction("Intercom");
+        }
 
         // ── REPORTS ───────────────────────────────────────────────────
 
@@ -657,6 +674,35 @@ namespace MoDLibrary.Controllers
             _db.DeleteMember(id);
             TempData["Success"] = "Member deactivated.";
             return RedirectToAction("Members");
+        }
+
+        // ── SESSION MANAGEMENT ────────────────────────────────────────
+
+        public IActionResult SessionManagement()
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            ViewBag.Settings = _db.GetSessionSettings();
+            ViewBag.ActiveSessions = _db.GetActiveSessions();
+            ViewBag.Queue = _db.GetQueue();
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult UpdateSessionSettings(int maxUsers, int duration)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            _db.UpdateSessionSettings(maxUsers, duration);
+            TempData["Success"] = "Session settings updated.";
+            return RedirectToAction("SessionManagement");
+        }
+
+        [HttpPost]
+        public IActionResult ForceEndSession(int sessionId)
+        {
+            var check = RequireLibrarian(); if (check != null) return check;
+            _db.EndSession(sessionId);
+            TempData["Success"] = "Session ended.";
+            return RedirectToAction("SessionManagement");
         }
         // PDF Download
         [HttpPost]

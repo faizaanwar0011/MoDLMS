@@ -119,6 +119,17 @@
                             </select>
                         </div>
                     </div>
+                    <!-- Intercom Number Auto Display -->
+                    <div class="col-md-12" id="intercomDiv" style="display:none;">
+                        <div class="alert alert-info d-flex align-items-center gap-2 py-2"
+                             style="font-size:13px;">
+                            <i class="bi bi-telephone-fill text-primary flex-shrink-0"></i>
+                            <div>
+                                <strong>Section Intercom:</strong>
+                                <span id="intercomDisplay" class="fw-bold text-primary ms-1">—</span>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Info -->
                     <div class="alert alert-info d-flex gap-2 mb-4" style="font-size:13px;">
@@ -159,9 +170,15 @@
 
         function loadSections(wingId) {
             const sel = document.getElementById('sectionSelect');
-            if (!wingId) { sel.innerHTML = '<option value="">— Select Wing first —</option>'; sel.disabled = true; return; }
+            if (!wingId) {
+                sel.innerHTML = '<option value="">— Select Wing first —</option>';
+                sel.disabled  = true;
+                document.getElementById('intercomDiv').style.display = 'none';
+                return;
+            }
             sel.disabled = true;
             sel.innerHTML = '<option value="">Loading…</option>';
+
             fetch('/Librarian/GetSections?wingId=' + wingId)
                 .then(r => r.json())
                 .then(data => {
@@ -170,11 +187,34 @@
                         const o = document.createElement('option');
                         o.value = s.sectionId;
                         o.textContent = s.sectionName;
+                        o.dataset.intercom = s.intercomNumber || '—';
                         sel.appendChild(o);
                     });
                     sel.disabled = false;
+                    document.getElementById('intercomDiv').style.display = 'none';
                 });
         }
+
+        // Section select hone pe intercom show karo
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('sectionSelect')
+                .addEventListener('change', function () {
+                    const opt      = this.options[this.selectedIndex];
+                    const intercom = opt.dataset.intercom;
+                    const div      = document.getElementById('intercomDiv');
+                    const display  = document.getElementById('intercomDisplay');
+
+                    if (this.value && intercom && intercom !== '—') {
+                        display.textContent    = intercom;
+                        div.style.display      = 'block';
+                    } else if (this.value) {
+                        display.textContent    = 'Not set';
+                        div.style.display      = 'block';
+                    } else {
+                        div.style.display      = 'none';
+                    }
+                });
+        });
     </script>
 }
 @*

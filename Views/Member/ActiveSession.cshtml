@@ -1,0 +1,152 @@
+﻿@{
+    ViewData["Title"] = "Active Session";
+    Layout = "~/Views/Shared/_MemberLayout.cshtml";
+    var status = ViewBag.Status as MoDLibrary.Models.SessionResult
+                 ?? new MoDLibrary.Models.SessionResult();
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+
+        <!-- Session Card -->
+        <div class="card border-0 shadow-sm mb-4"
+             style="border-radius:16px;
+            background:linear-gradient(135deg,#0a1628,#1e3a5f);
+            color:#fff;">
+            <div class="card-body p-4 text-center">
+                <div class="mb-3">
+                    <i class="bi bi-globe"
+                       style="font-size:48px;color:#c9a84c;"></i>
+                </div>
+                <h4 class="fw-bold mb-1">@status.LibraryName</h4>
+                <p style="color:rgba(255,255,255,.7);font-size:14px;">
+                    Your session is active
+                </p>
+
+                <!-- Countdown Timer -->
+                <div class="my-4">
+                    <div style="font-size:12px;color:rgba(255,255,255,.6);
+                        text-transform:uppercase;letter-spacing:.5px;
+                        margin-bottom:8px;">
+                        Time Remaining
+                    </div>
+                    <div id="countdown"
+                         style="font-size:52px;font-weight:800;
+                        color:#c9a84c;font-family:monospace;
+                        letter-spacing:4px;">
+                        00:00
+                    </div>
+                </div>
+
+                <!-- Open Library Button -->
+                <a href="@status.WebsiteUrl" target="_blank"
+                       class="btn btn-warning btn-lg px-5 fw-semibold mb-3">
+                    <i class="bi bi-box-arrow-up-right me-2"></i>
+                    Open @status.LibraryName
+                </a>
+
+                <br />
+
+                <!-- End Session -->
+                <form asp-action="EndSession" method="post"
+                      style="display:inline;">
+                    <input type="hidden" name="sessionId"
+                           value="@status.SessionId" />
+                    <button type="submit"
+                            class="btn btn-outline-light btn-sm mt-2"
+                            onclick="return confirm(
+                        'End your session early? This will allow the next person in queue to access.')">
+                        <i class="bi bi-x-circle me-1"></i>
+                        End Session Early
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="card border-0 shadow-sm"
+             style="border-radius:12px;">
+            <div class="card-body p-4">
+                <h6 class="fw-semibold mb-3">
+                    <i class="bi bi-info-circle me-2 text-info"></i>
+                    Session Information
+                </h6>
+                <ul class="list-unstyled mb-0"
+                    style="font-size:13px;color:#6c757d;">
+                    <li class="mb-2">
+                        <i class="bi bi-check2 text-success me-2"></i>
+                        Your session will automatically end when the
+                        timer reaches zero
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check2 text-success me-2"></i>
+                        Click "Open Library" to access the external library
+                        in a new tab
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check2 text-success me-2"></i>
+                        You can end your session early to allow others
+                        to access sooner
+                    </li>
+                    <li>
+                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                        Do not close this page — your session will be
+                        tracked here
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var seconds = @status.SecondsRemaining;
+        var sessionId = @status.SessionId;
+
+        function updateTimer() {
+            if (seconds <= 0) {
+                document.getElementById('countdown').textContent = '00:00';
+                // Auto end session
+                fetch('/Member/CheckSession')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status !== 'ACTIVE') {
+                            window.location.href = '/Member/SessionEnded';
+                        }
+                    });
+                return;
+            }
+
+            var mins = Math.floor(seconds / 60);
+            var secs = seconds % 60;
+            document.getElementById('countdown').textContent =
+                String(mins).padStart(2, '0') + ':' +
+                String(secs).padStart(2, '0');
+
+            // Warning color when less than 5 mins
+            if (seconds <= 300) {
+                document.getElementById('countdown').style.color = '#ef4444';
+            }
+
+            seconds--;
+        }
+
+        updateTimer();
+        var timer = setInterval(updateTimer, 1000);
+
+        // Poll server every 30 seconds to verify session
+        setInterval(function() {
+            fetch('/Member/CheckSession')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status !== 'ACTIVE') {
+                        clearInterval(timer);
+                        window.location.href = '/Member/SessionEnded';
+                    } else {
+                        seconds = data.secondsRemaining;
+                    }
+                });
+        }, 30000);
+    </script>
+}

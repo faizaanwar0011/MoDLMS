@@ -1,0 +1,230 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@{
+    ViewData["Title"] = "Session Management";
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+    var settings = ViewBag.Settings as MoDLibrary.Models.SessionSettings;
+    var activeSessions = ViewBag.ActiveSessions as List<MoDLibrary.Models.LibrarySession>
+                         ?? new();
+    var queue = ViewBag.Queue as List<MoDLibrary.Models.QueueItem>
+                         ?? new();
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h5 class="fw-semibold mb-0">External Library Session Management</h5>
+        <small class="text-muted">
+            Monitor active sessions and manage queue
+        </small>
+    </div>
+</div>
+
+<!-- Settings Card -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+    <div class="card-header bg-white border-bottom py-3 px-4">
+        <h6 class="fw-semibold mb-0">
+            <i class="bi bi-gear me-2 text-primary"></i>Session Settings
+        </h6>
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="UpdateSessionSettings" method="post">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-medium"
+                           style="font-size:13px;">
+                        Max Concurrent Users
+                    </label>
+                    <input type="number" name="maxUsers"
+                           class="form-control"
+                           value="@settings?.MaxConcurrentUsers"
+                           min="1" max="20" required />
+                    <div class="form-text">
+                        How many members can access at the same time
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-medium"
+                           style="font-size:13px;">
+                        Session Duration (minutes)
+                    </label>
+                    <input type="number" name="duration"
+                           class="form-control"
+                           value="@settings?.SessionDuration"
+                           min="5" max="120" required />
+                    <div class="form-text">
+                        How long each session lasts
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-save me-2"></i>Save Settings
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Active Sessions -->
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm h-100"
+             style="border-radius:12px;">
+            <div class="card-header bg-white border-bottom py-3 px-4
+                d-flex align-items-center justify-content-between">
+                <span class="fw-semibold" style="font-size:14px;">
+                    <i class="bi bi-person-check me-2 text-success"></i>
+                    Active Sessions
+                    <span class="badge bg-success ms-1">
+                        @activeSessions.Count / @settings?.MaxConcurrentUsers
+                    </span>
+                </span>
+            </div>
+            <div class="card-body p-0">
+                @if (!activeSessions.Any())
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-person-x"
+                           style="font-size:32px;opacity:.3;"></i>
+                        <p class="mt-2 mb-0" style="font-size:13px;">
+                            No active sessions
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background:#f8f9fa;">
+                            <tr>
+                                <th class="px-4 py-3"
+                                    style="font-size:11px;text-transform:uppercase;
+                                color:#6c757d;">Member</th>
+                                <th style="font-size:11px;text-transform:uppercase;
+                                color:#6c757d;">Library</th>
+                                <th style="font-size:11px;text-transform:uppercase;
+                                color:#6c757d;">Remaining</th>
+                                <th style="font-size:11px;text-transform:uppercase;
+                                color:#6c757d;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in activeSessions)
+                            {
+                                <tr>
+                                    <td class="px-4">
+                                        <div class="fw-medium"
+                                             style="font-size:13px;">
+                                            @s.MemberName
+                                        </div>
+                                        <div class="text-muted"
+                                             style="font-size:11px;">
+                                            @s.Username
+                                        </div>
+                                    </td>
+                                    <td style="font-size:13px;">
+                                        @s.LibraryName
+                                    </td>
+                                    <td>
+                                        @if (s.MinutesRemaining <= 5)
+                                        {
+                                            <span class="badge bg-danger">
+                                                @s.MinutesRemaining min left
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">
+                                                @s.MinutesRemaining min left
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <form asp-action="ForceEndSession"
+                                              method="post"
+                                              onsubmit="return confirm(
+                                            'Force end this session?')">
+                                            <input type="hidden"
+                                                   name="sessionId"
+                                                   value="@s.SessionId" />
+                                            <button class="btn btn-sm
+                                                btn-outline-danger">
+                                                <i class="bi bi-x-circle"></i>
+                                                End
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue -->
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm h-100"
+             style="border-radius:12px;">
+            <div class="card-header bg-white border-bottom py-3 px-4">
+                <span class="fw-semibold" style="font-size:14px;">
+                    <i class="bi bi-people me-2 text-warning"></i>
+                    Queue
+                    @if (queue.Any())
+                    {
+                        <span class="badge bg-warning text-dark ms-1">
+                            @queue.Count waiting
+                        </span>
+                    }
+                </span>
+            </div>
+            <div class="card-body p-0">
+                @if (!queue.Any())
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-check-circle text-success"
+                           style="font-size:32px;"></i>
+                        <p class="mt-2 mb-0" style="font-size:13px;">
+                            No one in queue
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var q in queue)
+                        {
+                            <li class="list-group-item px-4 py-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex
+                                        align-items-center
+                                        justify-content-center fw-bold"
+                                         style="width:32px;height:32px;
+                                        background:#fef3c7;
+                                        color:#d97706;font-size:14px;">
+                                        @q.QueuePosition
+                                    </div>
+                                    <div>
+                                        <div class="fw-medium"
+                                             style="font-size:13px;">
+                                            @q.MemberName
+                                        </div>
+                                        <div class="text-muted"
+                                             style="font-size:11px;">
+                                            @q.LibraryName •
+                                            Waiting since
+                                            @q.JoinedAt.ToString("hh:mm tt")
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
